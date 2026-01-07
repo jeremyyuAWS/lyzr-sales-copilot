@@ -215,15 +215,21 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
     }
   };
 
-  if (!dealId || !deal) return null;
+  if (!dealId) return null;
 
   const daysSinceActivity = activities.length > 0
     ? Math.floor((Date.now() - new Date(activities[0].created_at).getTime()) / (1000 * 60 * 60 * 24))
     : null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+        {!deal ? (
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          </div>
+        ) : (
+          <>
         <div className="flex items-start justify-between p-6 border-b border-gray-200">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2">
@@ -497,6 +503,8 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
             </div>
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );
