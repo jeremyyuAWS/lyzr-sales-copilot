@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await supabase
       .from('profiles')
       .select('*')
-      .limit(1)
+      .eq('email', 'arkojit.kolay@example.com')
       .maybeSingle();
 
     if (data) {
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile({
         id: 'demo-user-id',
         email: 'demo@sales-copilot.com',
-        full_name: 'Sarah Johnson',
+        full_name: 'Arkojit Kolay',
         role: 'AE',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, ArrowRight, ExternalLink, Link as LinkIcon } from 'lucide-react';
+import { Search, ArrowRight, ExternalLink, Link as LinkIcon, ThumbsUp, ThumbsDown } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import PromptPills from '../components/PromptPills';
 import DemoScenarios from '../components/DemoScenarios';
 import HubSpotPreview from '../components/HubSpotPreview';
+import DealInsights from '../components/DealInsights';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -16,10 +17,15 @@ export default function Ask() {
   const [textareaRows, setTextareaRows] = useState(3);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showHubSpotPreview, setShowHubSpotPreview] = useState(false);
+  const [showDealInsights, setShowDealInsights] = useState(false);
+  const [feedback, setFeedback] = useState<Record<string, 'upvote' | 'downvote' | null>>({});
 
   useEffect(() => {
     loadRecentSearches();
-  }, [profile]);
+    if (profile?.id) {
+      loadFeedback();
+    }
+  }, [profile, query]);
 
   const loadRecentSearches = () => {
     const saved = localStorage.getItem('recentSearches');
@@ -47,6 +53,14 @@ export default function Ask() {
 
     if (isMeetingNotes) {
       setShowHubSpotPreview(true);
+      return;
+    }
+
+    const isDealInsights = (query.toLowerCase().includes('analyze') || query.toLowerCase().includes('insights')) &&
+                          (query.toLowerCase().includes('deal') || query.toLowerCase().includes('stage:'));
+
+    if (isDealInsights) {
+      setShowDealInsights(true);
       return;
     }
 
@@ -179,6 +193,70 @@ export default function Ask() {
     setShowHubSpotPreview(false);
   };
 
+  const handleDealInsightsClose = () => {
+    setShowDealInsights(false);
+    setRecommendations([]);
+    setQuery('');
+    setTextareaRows(3);
+  };
+
+  const loadFeedback = async () => {
+    if (!profile?.id || !query) return;
+
+    try {
+      const { data } = await supabase
+        .from('asset_recommendation_feedback')
+        .select('asset_id, feedback_type')
+        .eq('user_id', profile.id)
+        .eq('context', query);
+
+      if (data) {
+        const feedbackMap: Record<string, 'upvote' | 'downvote' | null> = {};
+        data.forEach(item => {
+          feedbackMap[item.asset_id] = item.feedback_type as 'upvote' | 'downvote';
+        });
+        setFeedback(feedbackMap);
+      }
+    } catch (error) {
+      console.error('Error loading feedback:', error);
+    }
+  };
+
+  const handleFeedback = async (assetId: string, type: 'upvote' | 'downvote') => {
+    if (!profile?.id) return;
+
+    const currentFeedback = feedback[assetId];
+    const newFeedback = currentFeedback === type ? null : type;
+
+    setFeedback(prev => ({ ...prev, [assetId]: newFeedback }));
+
+    try {
+      if (newFeedback === null) {
+        await supabase
+          .from('asset_recommendation_feedback')
+          .delete()
+          .eq('user_id', profile.id)
+          .eq('asset_id', assetId)
+          .eq('context', query);
+      } else {
+        await supabase
+          .from('asset_recommendation_feedback')
+          .upsert({
+            user_id: profile.id,
+            asset_id: assetId,
+            context: query,
+            feedback_type: newFeedback,
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id,asset_id,context'
+          });
+      }
+    } catch (error) {
+      console.error('Error saving feedback:', error);
+      setFeedback(prev => ({ ...prev, [assetId]: currentFeedback }));
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-6">
       {showHubSpotPreview ? (
@@ -194,6 +272,8 @@ export default function Ask() {
             context={query}
           />
         </div>
+      ) : showDealInsights ? (
+        <DealInsights query={query} onClose={handleDealInsightsClose} />
       ) : recommendations.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[70vh]">
           <div className="mb-12 text-center">
@@ -294,6 +374,28 @@ export default function Ask() {
                     </button>
                   </div>
                   <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => handleFeedback(rec.asset.id, 'upvote')}
+                      className={`p-2 rounded-lg transition-colors ${
+                        feedback[rec.asset.id] === 'upvote'
+                          ? 'bg-green-100 text-green-700 border border-green-300'
+                          : 'border border-gray-300 hover:bg-white text-gray-400 hover:text-green-600'
+                      }`}
+                      title="This is helpful"
+                    >
+                      <ThumbsUp className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleFeedback(rec.asset.id, 'downvote')}
+                      className={`p-2 rounded-lg transition-colors ${
+                        feedback[rec.asset.id] === 'downvote'
+                          ? 'bg-red-100 text-red-700 border border-red-300'
+                          : 'border border-gray-300 hover:bg-white text-gray-400 hover:text-red-600'
+                      }`}
+                      title="Not relevant"
+                    >
+                      <ThumbsDown className="h-4 w-4" />
+                    </button>
                     {rec.asset.url && (
                       <>
                         <a
