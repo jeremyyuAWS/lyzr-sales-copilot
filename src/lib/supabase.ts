@@ -24,6 +24,9 @@ export type Deal = {
   industry: string;
   notes?: string | null;
   cloud_provider?: string | null;
+  next_action?: string | null;
+  next_action_due_date?: string | null;
+  health_flags?: string[] | null;
   created_at: string;
   updated_at: string;
 };
@@ -78,6 +81,15 @@ export type Asset = {
   status: AssetStatus;
   view_count: number;
   last_accessed_at: string | null;
+  when_to_use?: string | null;
+  positioning_angle?: string | null;
+  common_next_steps?: string[] | null;
+  best_for_stages?: string[] | null;
+  best_for_personas?: string[] | null;
+  what_it_is_not?: string | null;
+  related_asset_ids?: string[] | null;
+  momentum_indicator?: string | null;
+  typical_placement?: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;

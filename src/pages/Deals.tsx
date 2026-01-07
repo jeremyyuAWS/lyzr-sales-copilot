@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Calendar, DollarSign, Cloud, Sparkles, FileText, LayoutGrid, List, Filter, Target, TrendingUp, ExternalLink, RefreshCw, CheckCircle2, AlertCircle, Activity, Clock } from 'lucide-react';
+import { Calendar, DollarSign, Cloud, Sparkles, FileText, LayoutGrid, List, Filter, Target, TrendingUp, ExternalLink, RefreshCw, CheckCircle2, AlertCircle, Activity, Clock, CheckSquare, Square, ArrowRight } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import DealDetailModal from '../components/DealDetailModal';
+import UpcomingMilestones from '../components/UpcomingMilestones';
+import DealHealthBreakdown from '../components/DealHealthBreakdown';
 import { supabase, Deal } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -25,7 +27,7 @@ const CLOUD_ICONS: Record<string, string> = {
   'Multi-Cloud': '☁️',
 };
 
-type ViewMode = 'kanban' | 'list';
+type ViewMode = 'kanban' | 'timeline';
 
 export default function Deals({ onNavigate }: DealsProps) {
   const { profile } = useAuth();
@@ -33,15 +35,20 @@ export default function Deals({ onNavigate }: DealsProps) {
   const [dealContexts, setDealContexts] = useState<Record<string, any>>({});
   const [recommendations, setRecommendations] = useState<Record<string, any[]>>({});
   const [activities, setActivities] = useState<Record<string, any[]>>({});
+  const [milestones, setMilestones] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<Record<string, any[]>>({});
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [cloudFilter, setCloudFilter] = useState<string>('all');
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
+  const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadDeals();
     loadRecommendations();
     loadActivities();
+    loadMilestones();
+    loadTasks();
   }, []);
 
   const loadDeals = async () => {
@@ -113,6 +120,50 @@ export default function Deals({ onNavigate }: DealsProps) {
     }
   };
 
+  const loadMilestones = async () => {
+    const { data: milestonesData } = await supabase
+      .from('deal_milestones')
+      .select('*, deal:deals(company_name)')
+      .eq('completed', false)
+      .gte('due_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+      .lte('due_date', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString())
+      .order('due_date', { ascending: true });
+
+    if (milestonesData) {
+      const enrichedMilestones = milestonesData.map(m => {
+        const dueDate = new Date(m.due_date);
+        const now = new Date();
+        const diffDays = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+        return {
+          ...m,
+          company_name: m.deal?.company_name || 'Unknown',
+          is_overdue: diffDays < 0,
+          days_until: diffDays,
+        };
+      });
+      setMilestones(enrichedMilestones);
+    }
+  };
+
+  const loadTasks = async () => {
+    const { data } = await supabase
+      .from('deal_tasks')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      const tasksMap: Record<string, any[]> = {};
+      data.forEach((task) => {
+        if (!tasksMap[task.deal_id]) {
+          tasksMap[task.deal_id] = [];
+        }
+        tasksMap[task.deal_id].push(task);
+      });
+      setTasks(tasksMap);
+    }
+  };
+
   const calculateCompletenessScore = (deal: Deal, context: any): number => {
     let score = 0;
     let total = 0;
@@ -174,14 +225,27 @@ export default function Deals({ onNavigate }: DealsProps) {
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
   };
 
+  const getNextActionColor = (deal: Deal): string => {
+    if (!deal.next_action_due_date) return 'bg-gray-50 text-gray-700 border-gray-200';
+    const dueDate = new Date(deal.next_action_due_date);
+    const now = new Date();
+    const diffDays = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return 'bg-red-50 text-red-700 border-red-200';
+    if (diffDays <= 1) return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+    return 'bg-green-50 text-green-700 border-green-200';
+  };
+
   const DealCard = ({ deal }: { deal: Deal }) => {
     const context = dealContexts[deal.id];
     const dealRecs = recommendations[deal.id] || [];
+    const dealTasks = tasks[deal.id] || [];
     const hasNotes = context?.meeting_notes && context.meeting_notes.trim().length > 0;
     const hasUseCase = context?.primary_use_case && context.primary_use_case.trim().length > 0;
     const completenessScore = calculateCompletenessScore(deal, context);
     const daysSinceActivity = getDaysSinceLastActivity(deal.id);
     const isStale = daysSinceActivity !== null && daysSinceActivity >= 7;
+    const hasHealthFlags = deal.health_flags && deal.health_flags.length > 0;
 
     return (
       <GlassCard
@@ -190,6 +254,13 @@ export default function Deals({ onNavigate }: DealsProps) {
         onClick={() => setSelectedDealId(deal.id)}
       >
         <div className="space-y-3">
+          {deal.next_action && (
+            <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-medium ${getNextActionColor(deal)}`}>
+              <ArrowRight className="h-3.5 w-3.5" />
+              <span className="flex-1">Next: {deal.next_action}</span>
+            </div>
+          )}
+
           <div>
             <h4 className="font-bold text-base group-hover:text-black transition-colors mb-2">
               {deal.company_name}
@@ -250,6 +321,54 @@ export default function Deals({ onNavigate }: DealsProps) {
                   {truncateText(context.meeting_notes, 100)}
                 </p>
               </div>
+            </div>
+          )}
+
+          {hasHealthFlags && (
+            <div className="border-t border-gray-200 pt-3">
+              <DealHealthBreakdown
+                flags={deal.health_flags}
+                daysSinceActivity={daysSinceActivity}
+              />
+            </div>
+          )}
+
+          {dealTasks.length > 0 && (
+            <div className="border-t border-gray-200 pt-3">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpandedTasks(prev => ({ ...prev, [deal.id]: !prev[deal.id] }));
+                }}
+                className="w-full flex items-center justify-between mb-2 hover:opacity-70 transition-opacity"
+              >
+                <div className="flex items-center gap-1.5">
+                  <CheckSquare className="h-3.5 w-3.5 text-gray-700" />
+                  <span className="text-xs font-medium text-gray-900">
+                    Tasks ({dealTasks.filter(t => t.status === 'completed').length}/{dealTasks.length})
+                  </span>
+                </div>
+                <span className="text-xs text-gray-500">{expandedTasks[deal.id] ? '−' : '+'}</span>
+              </button>
+
+              {expandedTasks[deal.id] && (
+                <div className="space-y-1.5">
+                  {dealTasks.slice(0, 3).map((task) => (
+                    <div key={task.id} className="flex items-start gap-2 px-2 py-1.5 bg-gray-50 rounded text-xs">
+                      {task.status === 'completed' ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-green-600 mt-0.5 flex-shrink-0" />
+                      ) : task.status === 'overdue' ? (
+                        <AlertCircle className="h-3.5 w-3.5 text-red-600 mt-0.5 flex-shrink-0" />
+                      ) : (
+                        <Square className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                      )}
+                      <span className={`flex-1 ${task.status === 'completed' ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                        {task.title}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -342,6 +461,11 @@ export default function Deals({ onNavigate }: DealsProps) {
         </div>
       )}
 
+      <UpcomingMilestones
+        milestones={milestones}
+        onMilestoneClick={(dealId) => setSelectedDealId(dealId)}
+      />
+
       <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div>
           <h1 className="text-2xl font-bold">My Deals</h1>
@@ -354,23 +478,25 @@ export default function Deals({ onNavigate }: DealsProps) {
           <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 p-1">
             <button
               onClick={() => setViewMode('kanban')}
-              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
                 viewMode === 'kanban'
                   ? 'bg-black text-white'
                   : 'text-gray-600 hover:text-black'
               }`}
             >
               <LayoutGrid className="h-4 w-4" />
+              <span>Stage View</span>
             </button>
             <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                viewMode === 'list'
+              onClick={() => setViewMode('timeline')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                viewMode === 'timeline'
                   ? 'bg-black text-white'
                   : 'text-gray-600 hover:text-black'
               }`}
             >
-              <List className="h-4 w-4" />
+              <Calendar className="h-4 w-4" />
+              <span>Timeline View</span>
             </button>
           </div>
 
@@ -429,10 +555,75 @@ export default function Deals({ onNavigate }: DealsProps) {
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto">
-          <div className="space-y-3">
-            {filteredDeals.map((deal) => (
-              <DealCard key={deal.id} deal={deal} />
-            ))}
+          <div className="space-y-6">
+            {(() => {
+              const dealsByDate: Record<string, Deal[]> = {
+                'Overdue': [],
+                'Today': [],
+                'This Week': [],
+                'Next Week': [],
+                'Later': [],
+              };
+
+              filteredDeals.forEach((deal) => {
+                if (!deal.next_action_due_date) {
+                  dealsByDate['Later'].push(deal);
+                  return;
+                }
+
+                const dueDate = new Date(deal.next_action_due_date);
+                const now = new Date();
+                const diffDays = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+                if (diffDays < 0) {
+                  dealsByDate['Overdue'].push(deal);
+                } else if (diffDays === 0) {
+                  dealsByDate['Today'].push(deal);
+                } else if (diffDays <= 7) {
+                  dealsByDate['This Week'].push(deal);
+                } else if (diffDays <= 14) {
+                  dealsByDate['Next Week'].push(deal);
+                } else {
+                  dealsByDate['Later'].push(deal);
+                }
+              });
+
+              return Object.entries(dealsByDate).map(([timeframe, timeframeDeals]) => {
+                if (timeframeDeals.length === 0) return null;
+
+                return (
+                  <div key={timeframe}>
+                    <div className="bg-white rounded-xl p-4 mb-3 border border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <h3 className={`font-bold text-base ${
+                          timeframe === 'Overdue' ? 'text-red-700' :
+                          timeframe === 'Today' ? 'text-orange-700' :
+                          'text-gray-900'
+                        }`}>
+                          {timeframe}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-gray-600">
+                            {timeframeDeals.length} {timeframeDeals.length === 1 ? 'deal' : 'deals'}
+                          </p>
+                          <span className="text-gray-400">•</span>
+                          <p className="text-sm font-semibold text-gray-900">
+                            ${timeframeDeals.reduce((sum, d) => sum + Number(d.amount), 0).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {timeframeDeals.map((deal) => (
+                        <DealCard key={deal.id} deal={deal} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              }).filter(Boolean);
+            })()}
+
             {filteredDeals.length === 0 && (
               <div className="text-center py-12 text-gray-400">
                 No deals match the current filter
