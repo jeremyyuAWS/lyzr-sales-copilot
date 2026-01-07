@@ -17,33 +17,33 @@ const DEMO_SCENARIOS: DemoScenario[] = [
     description: 'Paste meeting notes and auto-generate HubSpot updates',
     color: 'bg-blue-500 hover:bg-blue-600',
     icon: <FileText className="h-4 w-4" />,
-    demoText: `Meeting notes from TechFlow Solutions - 3/15/24
+    demoText: `Meeting notes from Warby Parker - 3/15/24
 
-Attendees: Sarah Chen (CTO), Mike Rodriguez (VP Engineering), [Me] Alex
+Attendees: David Gilboa (Co-CEO), Jennifer Lee (VP Customer Experience), [Me] Alex
 
 Key discussion points:
-- They're migrating 200+ microservices from on-prem to AWS
-- Current pain: manual deployment process taking 3-4 hours per service
-- Interested in our AI-powered deployment automation
-- Concerned about security and compliance (SOC 2, HIPAA requirements)
-- Budget: $250k-$300k range approved by finance
-- Timeline: Want to start pilot in Q2, full rollout by Q3
+- Rolling out LensMate AI to personalize customer sales & support across 200+ retail locations
+- Current pain: inconsistent customer experience, manual product recommendations
+- Interested in our AI-powered personalization and virtual try-on integration
+- Concerned about data privacy and customer consent (CCPA/GDPR compliance)
+- Budget: $180k-$220k range approved by leadership
+- Timeline: Want to pilot in 10 stores by Q2, full rollout by holiday season
 
 Buying signals:
-- Sarah mentioned "this is exactly what we need"
-- Already got budget approval (good sign!)
-- Urgency around Q2 timeline
+- Jennifer mentioned "this could transform our in-store experience"
+- Already got budget approval and executive sponsorship
+- Urgency around holiday season preparation
 
 Competitors mentioned:
-- Currently evaluating Harness and GitLab
-- Prefer our AI capabilities over competitors
+- Evaluated generic chatbot solutions but found them too basic
+- Prefer our retail-specific AI capabilities
 
 Next steps:
-- Schedule technical deep-dive with their DevOps team
-- Share case study from similar healthcare company
+- Schedule demo with store managers and customer experience team
+- Share case study from Under Armour retail transformation
 - Send pricing proposal by end of week
 
-Deal size: ~$280k ARR
+Deal size: ~$195k ARR
 Close date: Targeting end of Q2`,
   },
   {
@@ -52,13 +52,13 @@ Close date: Targeting end of Q2`,
     description: 'Create personalized follow-up with recommended assets',
     color: 'bg-green-500 hover:bg-green-600',
     icon: <Mail className="h-4 w-4" />,
-    demoText: `Generate a follow-up email for TechFlow Solutions after our discovery call.
+    demoText: `Generate a follow-up email for Accenture M&A after our discovery call.
 
 Include:
-- Summary of their AWS migration challenge
-- Link to our healthcare compliance case study
-- Suggest next steps (technical deep-dive)
-- Attach relevant demo video`,
+- Summary of their deal intelligence and due diligence automation needs
+- Link to our financial services case study (Dev Factory)
+- Suggest next steps (technical deep-dive with M&A team)
+- Attach relevant demo video showing document analysis capabilities`,
   },
   {
     id: 'asset-recommendation',
@@ -66,14 +66,14 @@ Include:
     description: 'Get AI recommendations for demos, case studies, and proofs',
     color: 'bg-purple-500 hover:bg-purple-600',
     icon: <Target className="h-4 w-4" />,
-    demoText: `Find the best assets to share with TechFlow Solutions.
+    demoText: `Find the best assets to share with Under Armour.
 
 Deal context:
-- Industry: Technology/SaaS
-- Use case: AWS migration and deployment automation
+- Industry: Retail/Athletic Apparel
+- Use case: PLM Assistant for product intelligence and market insights
 - Stage: Discovery
-- Pain points: Manual deployments, security/compliance concerns
-- Competitors: Harness, GitLab
+- Pain points: Slow product development cycles, disconnected market data
+- Competitors: Legacy PLM systems, manual processes
 
 What demos, case studies, or proof points should I share?`,
   },
@@ -83,14 +83,14 @@ What demos, case studies, or proof points should I share?`,
     description: 'Analyze deal health and get strategic recommendations',
     color: 'bg-orange-500 hover:bg-orange-600',
     icon: <Zap className="h-4 w-4" />,
-    demoText: `Analyze my TechFlow Solutions deal and provide insights:
+    demoText: `Analyze my NVIDIA deal and provide insights:
 
-- Deal stage: Discovery
-- Amount: $280k ARR
-- Close date: End of Q2
-- Key stakeholders: CTO, VP Engineering
-- Competitors: Harness, GitLab
-- Status: Technical deep-dive scheduled next week
+- Deal stage: Technical Validation
+- Amount: $450k ARR
+- Close date: End of Q3
+- Key stakeholders: VP Enterprise Support, Director of Customer Success
+- Competitors: ServiceNow, Zendesk AI
+- Status: Enterprise Support Copilot pilot running with 50 engineers
 
 What should I focus on to win this deal?`,
   },
