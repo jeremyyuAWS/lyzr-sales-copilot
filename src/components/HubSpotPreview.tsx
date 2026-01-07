@@ -53,6 +53,88 @@ export default function HubSpotPreview({ onConfirm, onEdit, onCancel, context = 
     return match ? match[1] : undefined;
   };
 
+  const extractAmount = (text: string): number => {
+    const dealSizeMatch = text.match(/deal\s+size:\s*[~$]?(\d+)k/i);
+    if (dealSizeMatch) return parseInt(dealSizeMatch[1]) * 1000;
+
+    const budgetMatch = text.match(/budget:\s*\$?([\d,]+)k?\s*-?\s*\$?([\d,]+)k?/i);
+    if (budgetMatch) {
+      const low = parseInt(budgetMatch[1].replace(/,/g, ''));
+      const high = parseInt(budgetMatch[2].replace(/,/g, ''));
+      return Math.round((low + high) / 2) * (budgetMatch[1].length <= 3 ? 1000 : 1);
+    }
+
+    return 280000;
+  };
+
+  const extractDate = (text: string): string => {
+    const dateMatch = text.match(/close\s+date:\s*(.+?)(?:\n|$)/i);
+    if (dateMatch) return dateMatch[1].trim();
+
+    const targetMatch = text.match(/targeting\s+(.+?)(?:\n|$)/i);
+    if (targetMatch) return targetMatch[1].trim();
+
+    return '2024-06-30';
+  };
+
+  const extractContacts = (text: string): Array<{ name: string; title: string; role: string }> => {
+    const contacts: Array<{ name: string; title: string; role: string }> = [];
+
+    const attendeeMatch = text.match(/attendees?:(.+?)(?:\n\n|\n[A-Z])/is);
+    if (attendeeMatch) {
+      const attendeeText = attendeeMatch[1];
+      const nameMatches = attendeeText.matchAll(/([A-Z][a-z]+\s+[A-Z][a-z]+)\s*\(([^)]+)\)/g);
+      for (const match of nameMatches) {
+        const name = match[1];
+        const title = match[2];
+        let role = 'Stakeholder';
+        if (title.toLowerCase().includes('ceo') || title.toLowerCase().includes('cto')) {
+          role = 'Decision Maker';
+        } else if (title.toLowerCase().includes('vp') || title.toLowerCase().includes('director')) {
+          role = 'Technical Champion';
+        }
+        contacts.push({ name, title, role });
+      }
+    }
+
+    if (contacts.length === 0) {
+      contacts.push(
+        { name: 'Sarah Chen', title: 'CTO', role: 'Decision Maker' },
+        { name: 'Mike Rodriguez', title: 'VP Engineering', role: 'Technical Champion' }
+      );
+    }
+
+    return contacts;
+  };
+
+  const extractTasks = (text: string): Array<{ title: string; dueDate: string; priority: string }> => {
+    const tasks: Array<{ title: string; dueDate: string; priority: string }> = [];
+
+    const nextStepsMatch = text.match(/next steps?:(.+?)(?:\n\n|\n[A-Z][a-z]+:|$)/is);
+    if (nextStepsMatch) {
+      const stepsText = nextStepsMatch[1];
+      const stepMatches = stepsText.matchAll(/[-•]\s*(.+?)(?:\n|$)/g);
+      for (const match of stepMatches) {
+        const step = match[1].trim();
+        if (step.length > 5) {
+          const priority = step.toLowerCase().includes('urgent') || step.toLowerCase().includes('asap') ? 'high' : 'medium';
+          const dueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          tasks.push({ title: step, dueDate, priority });
+        }
+      }
+    }
+
+    if (tasks.length === 0) {
+      tasks.push(
+        { title: 'Schedule technical deep-dive with DevOps team', dueDate: '2024-03-18', priority: 'high' },
+        { title: 'Share healthcare compliance case study', dueDate: '2024-03-16', priority: 'high' },
+        { title: 'Send pricing proposal', dueDate: '2024-03-20', priority: 'medium' }
+      );
+    }
+
+    return tasks;
+  };
+
   const isNewDeal = context.toLowerCase().includes('warby parker') ||
                     context.toLowerCase().includes('david gilboa') ||
                     context.toLowerCase().includes('create a new deal');
@@ -60,18 +142,11 @@ export default function HubSpotPreview({ onConfirm, onEdit, onCancel, context = 
   const hubspotUpdate: HubSpotUpdate = {
     dealStage: 'Technical Validation',
     dealStagePrevious: 'Discovery',
-    dealAmount: 280000,
-    closeDate: '2024-06-30',
-    notes: `Discovery call with CTO Sarah Chen and VP Engineering Mike Rodriguez. Strong buying signals - already have budget approval ($250-300k). Key pain point: manual deployment process for 200+ microservices taking 3-4 hours each. Interested in AI-powered automation. Security/compliance (SOC 2, HIPAA) is critical. Competing with Harness and GitLab, but they prefer our AI capabilities. Next: technical deep-dive with DevOps team scheduled.`,
-    contacts: [
-      { name: 'Sarah Chen', title: 'CTO', role: 'Decision Maker' },
-      { name: 'Mike Rodriguez', title: 'VP Engineering', role: 'Technical Champion' },
-    ],
-    tasks: [
-      { title: 'Schedule technical deep-dive with DevOps team', dueDate: '2024-03-18', priority: 'high' },
-      { title: 'Share healthcare compliance case study', dueDate: '2024-03-16', priority: 'high' },
-      { title: 'Send pricing proposal', dueDate: '2024-03-20', priority: 'medium' },
-    ],
+    dealAmount: extractAmount(context),
+    closeDate: extractDate(context),
+    notes: context.trim(),
+    contacts: extractContacts(context),
+    tasks: extractTasks(context),
     cloudProvider: extractCloudProvider(context),
     isNewDeal: isNewDeal,
   };
