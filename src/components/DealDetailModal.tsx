@@ -484,10 +484,21 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
             <div className="space-y-6">
               {recommendations.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    AI Recommendations ({recommendations.length})
-                  </h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      AI Recommendations ({recommendations.length})
+                    </h3>
+                    <button
+                      onClick={() => {
+                        loadRecommendations();
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-black hover:bg-gray-800 rounded-lg transition-colors"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Suggest Next Steps
+                    </button>
+                  </div>
                   <div className="space-y-3">
                     {recommendations.map((rec) => (
                       <div key={rec.id} className="bg-white border border-gray-200 rounded-lg p-3">

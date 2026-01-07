@@ -175,7 +175,16 @@ export default function ContentLibrary() {
     setShowVersionHistory(true);
   };
 
-  const handleViewAsset = async (assetId: string) => {
+  const handleViewAsset = async (assetId: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault();
+    }
+
+    setToast({
+      message: 'In production, this would redirect to the asset in your content management system',
+      type: 'info',
+    });
+
     await supabase
       .from('assets')
       .update({
@@ -550,18 +559,15 @@ export default function ContentLibrary() {
                           </button>
                         )}
                         {asset.url && (
-                          <a
-                            href={asset.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleViewAsset(asset.id);
+                              handleViewAsset(asset.id, e);
                             }}
                             className="px-3 py-1 text-sm bg-black text-white rounded-lg hover:bg-gray-800"
                           >
                             View
-                          </a>
+                          </button>
                         )}
                       </div>
                     </td>
@@ -628,18 +634,15 @@ export default function ContentLibrary() {
                     </button>
                   )}
                   {asset.url && (
-                    <a
-                      href={asset.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleViewAsset(asset.id);
+                        handleViewAsset(asset.id, e);
                       }}
                       className="px-3 py-1 text-sm bg-black text-white rounded-lg hover:bg-gray-800"
                     >
                       View
-                    </a>
+                    </button>
                   )}
                 </div>
               </div>
