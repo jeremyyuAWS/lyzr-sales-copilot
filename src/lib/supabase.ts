@@ -54,6 +54,7 @@ export type AssetCategory =
   | 'sales_play'
   | 'proof'
   | 'deck'
+  | 'blueprint'
   | 'other';
 
 export type AssetStatus = 'draft' | 'published' | 'archived';

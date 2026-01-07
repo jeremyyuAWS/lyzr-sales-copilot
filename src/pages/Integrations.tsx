@@ -67,17 +67,22 @@ export default function Integrations() {
         ))}
       </div>
 
-      <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
         <div className="flex items-start gap-4">
           <div className="bg-white rounded-xl p-3">
-            <Settings className="h-5 w-5 stroke-gray-700" />
+            <Settings className="h-5 w-5 stroke-blue-600" />
           </div>
           <div>
-            <h3 className="font-semibold mb-1">Demo Mode</h3>
-            <p className="text-sm text-gray-600">
-              This is a demonstration environment. HubSpot integration is simulated for testing purposes.
-              Comments and notes will be synced locally without requiring actual API credentials.
+            <h3 className="font-semibold mb-2 text-gray-900">Concept Demo Mode</h3>
+            <p className="text-sm text-gray-700 mb-3">
+              This is a concept demonstration environment. All integrations are simulated for demo purposes only.
             </p>
+            <div className="bg-white rounded-lg p-3 border border-blue-200">
+              <p className="text-xs text-gray-600">
+                <strong>No API credentials required.</strong> HubSpot sync, comments, and data flow are simulated locally.
+                This demo showcases the user experience and workflow without actual CRM connectivity.
+              </p>
+            </div>
           </div>
         </div>
       </div>

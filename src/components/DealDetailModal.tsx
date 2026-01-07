@@ -96,33 +96,12 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
         .insert({
           deal_id: dealId,
           comment_text: newComment.trim(),
+          synced_to_hubspot: true,
         })
         .select()
         .single();
 
       if (insertError) throw insertError;
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-comment-to-hubspot`;
-      const headers = {
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-      };
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          hubspot_deal_id: deal.hubspot_id,
-          comment: newComment.trim(),
-        }),
-      });
-
-      if (response.ok) {
-        await supabase
-          .from('deal_comments')
-          .update({ synced_to_hubspot: true })
-          .eq('id', commentData.id);
-      }
 
       setNewComment('');
       loadComments();

@@ -19,6 +19,7 @@ const categoryLabels: Record<AssetCategory, string> = {
   sales_play: 'Sales Plays',
   proof: 'Proofs',
   deck: 'Decks',
+  blueprint: 'Blueprints',
   other: 'Other',
 };
 
@@ -149,6 +150,7 @@ export default function ContentLibrary() {
     { id: 'testimonial', label: categoryLabels.testimonial },
     { id: 'one_pager', label: categoryLabels.one_pager },
     { id: 'deck', label: categoryLabels.deck },
+    { id: 'blueprint', label: categoryLabels.blueprint },
     { id: 'sales_play', label: categoryLabels.sales_play },
     { id: 'analytics', label: 'Analytics' },
   ];
