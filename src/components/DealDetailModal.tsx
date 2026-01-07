@@ -20,6 +20,7 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
   const [votes, setVotes] = useState<Record<string, 'up' | 'down'>>({});
   const [showFeedbackFor, setShowFeedbackFor] = useState<string | null>(null);
   const [feedbackReason, setFeedbackReason] = useState('');
+  const [otherReasonText, setOtherReasonText] = useState('');
 
   useEffect(() => {
     if (dealId) {
@@ -177,6 +178,7 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
 
   const handleSubmitFeedback = async (recId: string, assetId: string) => {
     if (!profile || !dealId || !feedbackReason) return;
+    if (feedbackReason === 'other' && !otherReasonText.trim()) return;
 
     try {
       const existing = await supabase
@@ -192,6 +194,7 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
           .update({
             vote: 'down',
             feedback_reason: feedbackReason,
+            feedback_notes: feedbackReason === 'other' ? otherReasonText : null,
           })
           .eq('id', existing.data.id);
       } else {
@@ -204,12 +207,14 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
             user_id: profile.id,
             vote: 'down',
             feedback_reason: feedbackReason,
+            feedback_notes: feedbackReason === 'other' ? otherReasonText : null,
           });
       }
 
       setVotes({ ...votes, [recId]: 'down' });
       setShowFeedbackFor(null);
       setFeedbackReason('');
+      setOtherReasonText('');
     } catch (error) {
       console.error('Error submitting feedback:', error);
     }
@@ -418,10 +423,23 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
                                 </label>
                               ))}
                             </div>
+
+                            {feedbackReason === 'other' && (
+                              <div className="mb-3">
+                                <textarea
+                                  value={otherReasonText}
+                                  onChange={(e) => setOtherReasonText(e.target.value)}
+                                  placeholder="Please provide more details..."
+                                  rows={3}
+                                  className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-none"
+                                />
+                              </div>
+                            )}
+
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleSubmitFeedback(rec.id, rec.asset_id)}
-                                disabled={!feedbackReason}
+                                disabled={!feedbackReason || (feedbackReason === 'other' && !otherReasonText.trim())}
                                 className="flex-1 px-3 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-colors"
                               >
                                 Submit Feedback
@@ -430,6 +448,7 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
                                 onClick={() => {
                                   setShowFeedbackFor(null);
                                   setFeedbackReason('');
+                                  setOtherReasonText('');
                                 }}
                                 className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs font-medium transition-colors"
                               >
