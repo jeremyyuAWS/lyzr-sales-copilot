@@ -45,8 +45,7 @@ Next steps:
 
 Deal size: ~$195k ARR
 Close date: Targeting end of Q2
-
-NOTE: This will create a new Deal in HubSpot with David Gilboa and Jennifer Lee as contacts. Review and approve before syncing to HubSpot.`,
+Cloud provider: AWS`,
   },
   {
     id: 'follow-up-email',

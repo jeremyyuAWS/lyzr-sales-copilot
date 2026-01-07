@@ -11,6 +11,8 @@ type HubSpotUpdate = {
   notes: string;
   contacts: Array<{ name: string; title: string; role: string }>;
   tasks: Array<{ title: string; dueDate: string; priority: string }>;
+  cloudProvider?: string;
+  isNewDeal?: boolean;
 };
 
 type FollowUpEmail = {
@@ -46,6 +48,15 @@ export default function HubSpotPreview({ onConfirm, onEdit, onCancel, context = 
   const [synced, setSynced] = useState(false);
   const [feedback, setFeedback] = useState<Record<string, 'upvote' | 'downvote' | null>>({});
 
+  const extractCloudProvider = (text: string): string | undefined => {
+    const match = text.match(/cloud provider:\s*(\w+)/i);
+    return match ? match[1] : undefined;
+  };
+
+  const isNewDeal = context.toLowerCase().includes('warby parker') ||
+                    context.toLowerCase().includes('david gilboa') ||
+                    context.toLowerCase().includes('create a new deal');
+
   const hubspotUpdate: HubSpotUpdate = {
     dealStage: 'Technical Validation',
     dealStagePrevious: 'Discovery',
@@ -61,6 +72,8 @@ export default function HubSpotPreview({ onConfirm, onEdit, onCancel, context = 
       { title: 'Share healthcare compliance case study', dueDate: '2024-03-16', priority: 'high' },
       { title: 'Send pricing proposal', dueDate: '2024-03-20', priority: 'medium' },
     ],
+    cloudProvider: extractCloudProvider(context),
+    isNewDeal: isNewDeal,
   };
 
   const followUpEmail: FollowUpEmail = {
@@ -258,6 +271,16 @@ Alex`,
                 {new Date(hubspotUpdate.closeDate).toLocaleDateString()}
               </span>
             </div>
+            {hubspotUpdate.cloudProvider && (
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Cloud Provider</span>
+                </div>
+                <span className="font-medium text-gray-900">
+                  {hubspotUpdate.cloudProvider}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -419,6 +442,24 @@ Alex`,
           ))}
         </div>
       </div>
+
+      {hubspotUpdate.isNewDeal && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-0.5">
+              <div className="h-5 w-5 rounded-full bg-blue-500 flex items-center justify-center">
+                <span className="text-white text-xs font-bold">!</span>
+              </div>
+            </div>
+            <div className="flex-1">
+              <h4 className="font-semibold text-blue-900 mb-1">New Deal Creation</h4>
+              <p className="text-sm text-blue-800">
+                This will create a new Deal in HubSpot with {hubspotUpdate.contacts.map(c => c.name).join(' and ')} as contacts. Review and approve before syncing to HubSpot.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-3 pt-4">
         <button
