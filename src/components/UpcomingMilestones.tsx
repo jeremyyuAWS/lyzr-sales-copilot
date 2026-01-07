@@ -149,7 +149,7 @@ export default function UpcomingMilestones({ milestones, onMilestoneClick }: Upc
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6 flex-shrink-0">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <Calendar className="h-5 w-5 text-gray-700" />
@@ -158,7 +158,7 @@ export default function UpcomingMilestones({ milestones, onMilestoneClick }: Upc
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-6 max-h-80 overflow-y-auto">
         {groups.map((group) => (
           <div key={group.label}>
             <div className="flex items-center gap-2 mb-3">
