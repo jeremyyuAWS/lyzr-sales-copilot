@@ -11,7 +11,7 @@ type DealsProps = {
   onNavigate: (page: string, dealId?: string) => void;
 };
 
-const STAGES = ['Discovery', 'Demo', 'Proposal', 'Negotiation', 'Closed Won'];
+const STAGES = ['Discovery', 'Demo', 'Technical Validation', 'Proposal', 'Negotiation', 'Closed Won'];
 
 const CLOUD_COLORS: Record<string, string> = {
   AWS: 'bg-orange-50 text-orange-700 border-orange-200',
