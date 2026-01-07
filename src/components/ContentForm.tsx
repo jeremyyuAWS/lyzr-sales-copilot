@@ -3,6 +3,7 @@ import { X, Save, FileText } from 'lucide-react';
 import { supabase, Asset, Profile, AssetCategory, AssetStatus, ExternalContact } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import ContactPicker from './ContactPicker';
+import TagInput from './TagInput';
 
 type ContentFormProps = {
   asset: Asset | null;
@@ -31,10 +32,10 @@ export default function ContentForm({ asset, profiles, onClose, onSave }: Conten
     category: 'other' as AssetCategory,
     description: '',
     url: '',
-    industry_tags: '',
-    persona_tags: '',
-    stage_tags: '',
-    cloud_tags: '',
+    industry_tags: [] as string[],
+    persona_tags: [] as string[],
+    stage_tags: [] as string[],
+    cloud_tags: [] as string[],
     contact_ae_id: null as string | null,
     contact_engineer_id: null as string | null,
     external_contacts: [] as ExternalContact[],
@@ -51,10 +52,10 @@ export default function ContentForm({ asset, profiles, onClose, onSave }: Conten
         category: asset.category,
         description: asset.description,
         url: asset.url,
-        industry_tags: asset.industry_tags.join(', '),
-        persona_tags: asset.persona_tags.join(', '),
-        stage_tags: asset.stage_tags.join(', '),
-        cloud_tags: asset.cloud_tags.join(', '),
+        industry_tags: asset.industry_tags || [],
+        persona_tags: asset.persona_tags || [],
+        stage_tags: asset.stage_tags || [],
+        cloud_tags: asset.cloud_tags || [],
         contact_ae_id: asset.contact_ae_id,
         contact_engineer_id: asset.contact_engineer_id,
         external_contacts: asset.external_contacts || [],
@@ -73,10 +74,10 @@ export default function ContentForm({ asset, profiles, onClose, onSave }: Conten
       category: formData.category,
       description: formData.description,
       url: formData.url,
-      industry_tags: formData.industry_tags.split(',').map(t => t.trim()).filter(Boolean),
-      persona_tags: formData.persona_tags.split(',').map(t => t.trim()).filter(Boolean),
-      stage_tags: formData.stage_tags.split(',').map(t => t.trim()).filter(Boolean),
-      cloud_tags: formData.cloud_tags.split(',').map(t => t.trim()).filter(Boolean),
+      industry_tags: formData.industry_tags,
+      persona_tags: formData.persona_tags,
+      stage_tags: formData.stage_tags,
+      cloud_tags: formData.cloud_tags,
       contact_ae_id: formData.contact_ae_id,
       contact_engineer_id: formData.contact_engineer_id,
       external_contacts: formData.external_contacts,
@@ -169,50 +170,42 @@ export default function ContentForm({ asset, profiles, onClose, onSave }: Conten
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Industry Tags</label>
-              <input
-                type="text"
-                value={formData.industry_tags}
-                onChange={(e) => setFormData({ ...formData, industry_tags: e.target.value })}
-                placeholder="Banking, Healthcare, FinTech"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              <TagInput
+                tags={formData.industry_tags}
+                onChange={(tags) => setFormData({ ...formData, industry_tags: tags })}
+                placeholder="e.g., Banking, Healthcare, FinTech"
+                colorScheme="blue"
               />
-              <p className="text-xs text-gray-500 mt-1">Comma-separated</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-2">Persona Tags</label>
-              <input
-                type="text"
-                value={formData.persona_tags}
-                onChange={(e) => setFormData({ ...formData, persona_tags: e.target.value })}
-                placeholder="CTO, VP Engineering"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              <TagInput
+                tags={formData.persona_tags}
+                onChange={(tags) => setFormData({ ...formData, persona_tags: tags })}
+                placeholder="e.g., CTO, VP Engineering"
+                colorScheme="green"
               />
-              <p className="text-xs text-gray-500 mt-1">Comma-separated</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-2">Stage Tags</label>
-              <input
-                type="text"
-                value={formData.stage_tags}
-                onChange={(e) => setFormData({ ...formData, stage_tags: e.target.value })}
-                placeholder="Discovery, Demo, Proposal"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              <TagInput
+                tags={formData.stage_tags}
+                onChange={(tags) => setFormData({ ...formData, stage_tags: tags })}
+                placeholder="e.g., Discovery, Demo, Proposal"
+                colorScheme="purple"
               />
-              <p className="text-xs text-gray-500 mt-1">Comma-separated</p>
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-2">Cloud Tags</label>
-              <input
-                type="text"
-                value={formData.cloud_tags}
-                onChange={(e) => setFormData({ ...formData, cloud_tags: e.target.value })}
-                placeholder="AWS, Azure, GCP"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              <TagInput
+                tags={formData.cloud_tags}
+                onChange={(tags) => setFormData({ ...formData, cloud_tags: tags })}
+                placeholder="e.g., AWS, Azure, GCP"
+                colorScheme="orange"
               />
-              <p className="text-xs text-gray-500 mt-1">Comma-separated</p>
             </div>
           </div>
 

@@ -6,6 +6,7 @@ import ContentForm from '../components/ContentForm';
 import VersionHistory from '../components/VersionHistory';
 import ContentAnalytics from '../components/ContentAnalytics';
 import AssetDetailModal from '../components/AssetDetailModal';
+import Toast from '../components/Toast';
 
 type ViewMode = 'table' | 'grid';
 type ContentTab = 'all' | AssetCategory | 'analytics';
@@ -47,6 +48,7 @@ export default function ContentLibrary() {
   const [personaFilter, setPersonaFilter] = useState<string>('');
   const [stageFilter, setStageFilter] = useState<string>('');
   const [cloudFilter, setCloudFilter] = useState<string>('');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   const isAdmin = profile?.role === 'Admin';
 
@@ -188,6 +190,13 @@ export default function ContentLibrary() {
   const handleAssetClick = (asset: Asset) => {
     setSelectedAsset(asset);
     setShowAssetDetail(true);
+  };
+
+  const handleViewAssetClick = () => {
+    setToast({
+      message: 'In production, this would open the actual asset file or link',
+      type: 'info',
+    });
   };
 
   const getCategoryCount = (category: AssetCategory) => {
@@ -420,7 +429,17 @@ export default function ContentLibrary() {
             setShowAssetDetail(false);
             setSelectedAsset(null);
             loadAssets();
+            loadCommentCounts();
           }}
+          onViewAsset={handleViewAssetClick}
+        />
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
 
