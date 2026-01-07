@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Grid, List, BarChart3, History, Eye, Users } from 'lucide-react';
+import { Plus, Search, Filter, Grid, List, BarChart3, History, Eye, Users, TrendingUp, Star } from 'lucide-react';
 import { supabase, Asset, Profile, AssetCategory } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import ContentForm from '../components/ContentForm';
@@ -8,6 +8,7 @@ import ContentAnalytics from '../components/ContentAnalytics';
 
 type ViewMode = 'table' | 'grid';
 type ContentTab = 'all' | AssetCategory | 'analytics';
+type SortBy = 'recent' | 'popular' | 'views';
 
 const categoryLabels: Record<AssetCategory, string> = {
   concept_demo: 'Concept Demos',
@@ -37,6 +38,11 @@ export default function ContentLibrary() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [assetUsage, setAssetUsage] = useState<Record<string, number>>({});
+  const [sortBy, setSortBy] = useState<SortBy>('popular');
+  const [industryFilter, setIndustryFilter] = useState<string>('');
+  const [personaFilter, setPersonaFilter] = useState<string>('');
+  const [stageFilter, setStageFilter] = useState<string>('');
+  const [cloudFilter, setCloudFilter] = useState<string>('');
 
   const isAdmin = profile?.role === 'Admin';
 
@@ -48,7 +54,7 @@ export default function ContentLibrary() {
 
   useEffect(() => {
     filterAssets();
-  }, [searchQuery, statusFilter, activeTab, assets]);
+  }, [searchQuery, statusFilter, activeTab, assets, sortBy, industryFilter, personaFilter, stageFilter, cloudFilter]);
 
   const loadAssetUsage = async () => {
     const { data } = await supabase
@@ -108,6 +114,33 @@ export default function ContentLibrary() {
       filtered = filtered.filter(asset => asset.status === statusFilter);
     }
 
+    if (industryFilter) {
+      filtered = filtered.filter(asset => asset.industry_tags.includes(industryFilter));
+    }
+
+    if (personaFilter) {
+      filtered = filtered.filter(asset => asset.persona_tags.includes(personaFilter));
+    }
+
+    if (stageFilter) {
+      filtered = filtered.filter(asset => asset.stage_tags.includes(stageFilter));
+    }
+
+    if (cloudFilter) {
+      filtered = filtered.filter(asset => asset.cloud_tags.includes(cloudFilter));
+    }
+
+    if (sortBy === 'popular') {
+      filtered = [...filtered].sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
+    } else if (sortBy === 'views') {
+      filtered = [...filtered].sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
+    } else if (sortBy === 'recent') {
+      filtered = [...filtered].sort((a, b) =>
+        new Date(b.last_accessed_at || b.created_at).getTime() -
+        new Date(a.last_accessed_at || a.created_at).getTime()
+      );
+    }
+
     setFilteredAssets(filtered);
   };
 
@@ -164,7 +197,7 @@ export default function ContentLibrary() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold">Content Library</h2>
-          <p className="text-sm text-gray-600 mt-1">Manage all sales content and resources</p>
+          <p className="text-sm text-gray-600 mt-1">Browse, preview, and reuse sales demos, case studies, and assets—ranked by usage, popularity, and peer feedback. Click any item to see details and how other AEs are using it.</p>
         </div>
         <button
           onClick={() => {
@@ -204,7 +237,7 @@ export default function ContentLibrary() {
           </div>
         </div>
 
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 space-y-3">
           <div className="flex flex-wrap gap-3">
             <div className="flex-1 min-w-[300px] relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -217,11 +250,21 @@ export default function ContentLibrary() {
               />
             </div>
 
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortBy)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
+            >
+              <option value="popular">Most Popular</option>
+              <option value="recent">Recently Used</option>
+              <option value="views">Most Views</option>
+            </select>
+
             {isAdmin && (
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-sm"
               >
                 <option value="">All Status</option>
                 <option value="published">Published</option>
@@ -244,16 +287,76 @@ export default function ContentLibrary() {
                 <Grid className="h-4 w-4" />
               </button>
             </div>
+          </div>
 
-            {(searchQuery || statusFilter) && (
+          <div className="flex flex-wrap gap-2 items-center">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <span className="text-xs font-medium text-gray-600">Filter by:</span>
+
+            <select
+              value={industryFilter}
+              onChange={(e) => setIndustryFilter(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-xs"
+            >
+              <option value="">All Industries</option>
+              <option value="Financial Services">Financial Services</option>
+              <option value="Healthcare">Healthcare</option>
+              <option value="SaaS">SaaS</option>
+              <option value="Manufacturing">Manufacturing</option>
+              <option value="Technology">Technology</option>
+            </select>
+
+            <select
+              value={personaFilter}
+              onChange={(e) => setPersonaFilter(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-xs"
+            >
+              <option value="">All Personas</option>
+              <option value="AE">AE</option>
+              <option value="Sales Manager">Sales Manager</option>
+              <option value="VP Sales">VP Sales</option>
+              <option value="CRO">CRO</option>
+              <option value="IT">IT</option>
+              <option value="CISO">CISO</option>
+            </select>
+
+            <select
+              value={stageFilter}
+              onChange={(e) => setStageFilter(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-xs"
+            >
+              <option value="">All Stages</option>
+              <option value="Discovery">Discovery</option>
+              <option value="Demo">Demo</option>
+              <option value="Proposal">Proposal</option>
+              <option value="Negotiation">Negotiation</option>
+              <option value="Closed Won">Closed Won</option>
+            </select>
+
+            <select
+              value={cloudFilter}
+              onChange={(e) => setCloudFilter(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-xs"
+            >
+              <option value="">All Cloud Providers</option>
+              <option value="AWS">AWS</option>
+              <option value="Azure">Azure</option>
+              <option value="GCP">GCP</option>
+            </select>
+
+            {(searchQuery || statusFilter || industryFilter || personaFilter || stageFilter || cloudFilter) && (
               <button
                 onClick={() => {
                   setSearchQuery('');
                   setStatusFilter('');
+                  setIndustryFilter('');
+                  setPersonaFilter('');
+                  setStageFilter('');
+                  setCloudFilter('');
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs font-medium"
               >
-                Clear
+                Clear All
               </button>
             )}
           </div>

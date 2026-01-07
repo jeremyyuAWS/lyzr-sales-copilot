@@ -27,6 +27,13 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   return (
     <div className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col" data-tour="sidebar">
       <div className="p-6 border-b border-gray-200">
+        <div className="flex items-center gap-3 mb-3">
+          <img
+            src="/lyzr-logo-cut.png"
+            alt="Lyzr"
+            className="h-8 w-auto"
+          />
+        </div>
         <h1 className="text-xl font-bold">Sales Copilot</h1>
         <p className="text-sm text-gray-600 mt-1">{profile?.full_name}</p>
         <p className="text-xs text-gray-500">{profile?.role}</p>
