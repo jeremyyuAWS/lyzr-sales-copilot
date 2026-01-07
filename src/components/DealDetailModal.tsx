@@ -26,6 +26,7 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
   const [editedNotes, setEditedNotes] = useState('');
   const [isEditingCloudProvider, setIsEditingCloudProvider] = useState(false);
   const [editedCloudProvider, setEditedCloudProvider] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (dealId) {
@@ -81,6 +82,108 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
       .limit(6);
 
     if (data) setRecommendations(data);
+  };
+
+  const generateRecommendations = async () => {
+    if (!dealId || !deal || !context) return;
+
+    setIsGenerating(true);
+
+    try {
+      const { data: allAssets } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('status', 'published');
+
+      if (!allAssets || allAssets.length === 0) {
+        setIsGenerating(false);
+        return;
+      }
+
+      const scoredAssets = allAssets.map((asset: any) => {
+        let score = 0;
+        const reasons: string[] = [];
+
+        if (deal.industry && asset.industry_tags?.includes(deal.industry)) {
+          score += 0.3;
+          reasons.push(`matches ${deal.industry} industry`);
+        }
+
+        if (deal.stage && asset.stage_tags?.includes(deal.stage)) {
+          score += 0.25;
+          reasons.push(`appropriate for ${deal.stage} stage`);
+        }
+
+        const dealCloud = deal.cloud_provider || context.cloud_provider;
+        if (dealCloud && asset.cloud_tags?.includes(dealCloud)) {
+          score += 0.2;
+          reasons.push(`supports ${dealCloud}`);
+        }
+
+        if (context.primary_persona && asset.persona_tags?.includes(context.primary_persona)) {
+          score += 0.15;
+          reasons.push(`tailored for ${context.primary_persona}`);
+        }
+
+        if (context.primary_use_case && asset.description?.toLowerCase().includes(context.primary_use_case.toLowerCase().split(' ')[0])) {
+          score += 0.1;
+          reasons.push('addresses similar use case');
+        }
+
+        const reason = reasons.length > 0
+          ? `This asset ${reasons.join(', ')}.`
+          : `General ${asset.category.replace('_', ' ')} asset that could support this deal.`;
+
+        return {
+          asset,
+          score: Math.min(score, 1),
+          reason
+        };
+      });
+
+      const topAssets = scoredAssets
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 6);
+
+      if (topAssets.length === 0) {
+        const fallbackAssets = scoredAssets
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 3);
+
+        for (const item of fallbackAssets) {
+          await supabase
+            .from('recommendations')
+            .upsert({
+              deal_id: dealId,
+              asset_id: item.asset.id,
+              reason: item.reason,
+              confidence_score: Math.max(item.score, 0.3)
+            }, {
+              onConflict: 'deal_id,asset_id'
+            });
+        }
+      } else {
+        for (const item of topAssets) {
+          await supabase
+            .from('recommendations')
+            .upsert({
+              deal_id: dealId,
+              asset_id: item.asset.id,
+              reason: item.reason,
+              confidence_score: item.score
+            }, {
+              onConflict: 'deal_id,asset_id'
+            });
+        }
+      }
+
+      await loadRecommendations();
+    } catch (error) {
+      console.error('Error generating recommendations:', error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const loadActivities = async () => {
@@ -489,13 +592,21 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
                     AI Recommendations {recommendations.length > 0 && `(${recommendations.length})`}
                   </h3>
                   <button
-                    onClick={() => {
-                      loadRecommendations();
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-black hover:bg-gray-800 rounded-lg transition-colors"
+                    onClick={generateRecommendations}
+                    disabled={isGenerating}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-black hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
                   >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    {recommendations.length > 0 ? 'Refresh' : 'Suggest Assets'}
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-3.5 w-3.5" />
+                        {recommendations.length > 0 ? 'Refresh' : 'Suggest Assets'}
+                      </>
+                    )}
                   </button>
                 </div>
                 {recommendations.length > 0 ? (
