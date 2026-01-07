@@ -482,23 +482,23 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
             </div>
 
             <div className="space-y-6">
-              {recommendations.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      AI Recommendations ({recommendations.length})
-                    </h3>
-                    <button
-                      onClick={() => {
-                        loadRecommendations();
-                      }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-black hover:bg-gray-800 rounded-lg transition-colors"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Suggest Next Steps
-                    </button>
-                  </div>
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    AI Recommendations {recommendations.length > 0 && `(${recommendations.length})`}
+                  </h3>
+                  <button
+                    onClick={() => {
+                      loadRecommendations();
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-black hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {recommendations.length > 0 ? 'Refresh' : 'Suggest Assets'}
+                  </button>
+                </div>
+                {recommendations.length > 0 ? (
                   <div className="space-y-3">
                     {recommendations.map((rec) => (
                       <div key={rec.id} className="bg-white border border-gray-200 rounded-lg p-3">
@@ -624,8 +624,14 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="bg-gray-50 rounded-lg p-6 text-center border border-gray-200">
+                    <Sparkles className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm text-gray-600 mb-1">No asset recommendations yet</p>
+                    <p className="text-xs text-gray-500">Click "Suggest Assets" to get AI-powered recommendations</p>
+                  </div>
+                )}
+              </div>
 
               <div>
                 <h3 className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
