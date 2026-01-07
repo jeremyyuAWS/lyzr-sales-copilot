@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Grid, List, BarChart3, History, Eye, Users, TrendingUp, Star } from 'lucide-react';
+import { Plus, Search, Filter, Grid, List, BarChart3, History, Eye, Users, TrendingUp, Star, MessageSquare } from 'lucide-react';
 import { supabase, Asset, Profile, AssetCategory } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import ContentForm from '../components/ContentForm';
@@ -41,6 +41,7 @@ export default function ContentLibrary() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [assetUsage, setAssetUsage] = useState<Record<string, number>>({});
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [sortBy, setSortBy] = useState<SortBy>('popular');
   const [industryFilter, setIndustryFilter] = useState<string>('');
   const [personaFilter, setPersonaFilter] = useState<string>('');
@@ -53,6 +54,7 @@ export default function ContentLibrary() {
     loadAssets();
     loadProfiles();
     loadAssetUsage();
+    loadCommentCounts();
   }, []);
 
   useEffect(() => {
@@ -70,6 +72,20 @@ export default function ContentLibrary() {
         usage[link.asset_id] = (usage[link.asset_id] || 0) + 1;
       });
       setAssetUsage(usage);
+    }
+  };
+
+  const loadCommentCounts = async () => {
+    const { data } = await supabase
+      .from('asset_comments')
+      .select('asset_id');
+
+    if (data) {
+      const counts: Record<string, number> = {};
+      data.forEach((comment) => {
+        counts[comment.asset_id] = (counts[comment.asset_id] || 0) + 1;
+      });
+      setCommentCounts(counts);
     }
   };
 
@@ -418,7 +434,7 @@ export default function ContentLibrary() {
                 <th className="px-6 py-3 text-left text-sm font-semibold">Tags</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold">Contacts</th>
                 {isAdmin && <th className="px-6 py-3 text-left text-sm font-semibold">Status</th>}
-                <th className="px-6 py-3 text-left text-sm font-semibold">Views</th>
+                <th className="px-6 py-3 text-left text-sm font-semibold">Engagement</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold">Actions</th>
               </tr>
             </thead>
@@ -478,9 +494,17 @@ export default function ContentLibrary() {
                       </td>
                     )}
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-1 text-sm">
-                        <Eye className="h-3 w-3 text-gray-400" />
-                        <span>{asset.view_count}</span>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Eye className="h-3 w-3 text-gray-400" />
+                          <span>{asset.view_count}</span>
+                        </div>
+                        {commentCounts[asset.id] > 0 && (
+                          <div className="flex items-center gap-1 text-blue-600">
+                            <MessageSquare className="h-3 w-3" />
+                            <span>{commentCounts[asset.id]}</span>
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -560,9 +584,17 @@ export default function ContentLibrary() {
                 ))}
               </div>
               <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                <div className="flex items-center gap-1 text-sm text-gray-600">
-                  <Eye className="h-3 w-3" />
-                  <span>{asset.view_count}</span>
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <Eye className="h-3 w-3" />
+                    <span>{asset.view_count}</span>
+                  </div>
+                  {commentCounts[asset.id] > 0 && (
+                    <div className="flex items-center gap-1 text-blue-600">
+                      <MessageSquare className="h-3 w-3" />
+                      <span>{commentCounts[asset.id]}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   {(asset.created_by === profile?.id || isAdmin) && (
