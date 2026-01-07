@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, ArrowRight, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import GlassCard from '../components/GlassCard';
 import PromptPills from '../components/PromptPills';
+import DemoScenarios from '../components/DemoScenarios';
+import HubSpotPreview from '../components/HubSpotPreview';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -13,6 +15,7 @@ export default function Ask() {
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [textareaRows, setTextareaRows] = useState(3);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showHubSpotPreview, setShowHubSpotPreview] = useState(false);
 
   useEffect(() => {
     loadRecentSearches();
@@ -37,6 +40,16 @@ export default function Ask() {
     if (!query.trim()) return;
 
     saveSearch(query);
+
+    const isMeetingNotes = query.toLowerCase().includes('meeting notes') ||
+                          query.toLowerCase().includes('attendees:') ||
+                          (query.includes('Key discussion') && query.includes('Next steps'));
+
+    if (isMeetingNotes) {
+      setShowHubSpotPreview(true);
+      return;
+    }
+
     setLoading(true);
     try {
       const { data } = await supabase
@@ -135,9 +148,52 @@ export default function Ask() {
     }, 0);
   };
 
+  const handleScenarioClick = (demoText: string) => {
+    setQuery(demoText);
+    const lineCount = demoText.split('\n').length;
+    setTextareaRows(Math.max(lineCount, 15));
+
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
+  };
+
+  const handleHubSpotConfirm = () => {
+    setShowHubSpotPreview(false);
+    setRecommendations([]);
+    setQuery('');
+    setTextareaRows(3);
+  };
+
+  const handleHubSpotEdit = () => {
+    setShowHubSpotPreview(false);
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  };
+
+  const handleHubSpotCancel = () => {
+    setShowHubSpotPreview(false);
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-6">
-      {recommendations.length === 0 ? (
+      {showHubSpotPreview ? (
+        <div className="py-8">
+          <div className="mb-6">
+            <h2 className="text-3xl font-bold mb-2">Processing Meeting Notes...</h2>
+            <p className="text-gray-600">AI has analyzed your notes and prepared everything for HubSpot</p>
+          </div>
+          <HubSpotPreview
+            onConfirm={handleHubSpotConfirm}
+            onEdit={handleHubSpotEdit}
+            onCancel={handleHubSpotCancel}
+          />
+        </div>
+      ) : recommendations.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[70vh]">
           <div className="mb-12 text-center">
             <img
@@ -150,6 +206,8 @@ export default function Ask() {
           </div>
 
           <div className="w-full max-w-3xl">
+            <DemoScenarios onScenarioClick={handleScenarioClick} />
+
             <div className="relative bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow" data-tour="ask-input">
               <div className="flex items-start gap-3 p-4">
                 <Search className="h-5 w-5 text-gray-400 mt-2 flex-shrink-0" />
@@ -178,6 +236,8 @@ export default function Ask() {
       ) : (
         <div className="py-8">
           <div className="mb-8">
+            <DemoScenarios onScenarioClick={handleScenarioClick} />
+
             <div className="relative bg-white rounded-2xl border border-gray-200 shadow-sm">
               <div className="flex items-start gap-3 p-4">
                 <Search className="h-5 w-5 text-gray-400 mt-2 flex-shrink-0" />
