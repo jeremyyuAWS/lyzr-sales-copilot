@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, ExternalLink, Sparkles, DollarSign, Calendar, Users, Briefcase, Activity, Send, MessageSquare, Loader2 } from 'lucide-react';
+import { X, ExternalLink, Sparkles, DollarSign, Calendar, Users, Briefcase, Activity, Send, MessageSquare, Loader2, ThumbsUp, ThumbsDown, ChevronDown } from 'lucide-react';
 import { supabase, Deal } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 type DealDetailModalProps = {
   dealId: string | null;
@@ -8,6 +9,7 @@ type DealDetailModalProps = {
 };
 
 export default function DealDetailModal({ dealId, onClose }: DealDetailModalProps) {
+  const { profile } = useAuth();
   const [deal, setDeal] = useState<Deal | null>(null);
   const [context, setContext] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<any[]>([]);
@@ -15,6 +17,9 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [votes, setVotes] = useState<Record<string, 'up' | 'down'>>({});
+  const [showFeedbackFor, setShowFeedbackFor] = useState<string | null>(null);
+  const [feedbackReason, setFeedbackReason] = useState('');
 
   useEffect(() => {
     if (dealId) {
@@ -22,6 +27,7 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
       loadRecommendations();
       loadActivities();
       loadComments();
+      loadVotes();
     }
   }, [dealId]);
 
@@ -85,6 +91,24 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
     if (data) setComments(data);
   };
 
+  const loadVotes = async () => {
+    if (!dealId || !profile) return;
+
+    const { data } = await supabase
+      .from('recommendation_feedback')
+      .select('recommendation_id, vote')
+      .eq('deal_id', dealId)
+      .eq('user_id', profile.id);
+
+    if (data) {
+      const votesMap: Record<string, 'up' | 'down'> = {};
+      data.forEach((v) => {
+        votesMap[v.recommendation_id] = v.vote;
+      });
+      setVotes(votesMap);
+    }
+  };
+
   const handleAddComment = async () => {
     if (!newComment.trim() || !dealId || !deal) return;
 
@@ -109,6 +133,85 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
       console.error('Error adding comment:', error);
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleVote = async (recId: string, assetId: string, voteType: 'up' | 'down') => {
+    if (!profile || !dealId) return;
+
+    if (voteType === 'down') {
+      setShowFeedbackFor(recId);
+      return;
+    }
+
+    try {
+      const existing = await supabase
+        .from('recommendation_feedback')
+        .select('id')
+        .eq('recommendation_id', recId)
+        .eq('user_id', profile.id)
+        .maybeSingle();
+
+      if (existing.data) {
+        await supabase
+          .from('recommendation_feedback')
+          .update({ vote: voteType })
+          .eq('id', existing.data.id);
+      } else {
+        await supabase
+          .from('recommendation_feedback')
+          .insert({
+            recommendation_id: recId,
+            deal_id: dealId,
+            asset_id: assetId,
+            user_id: profile.id,
+            vote: voteType,
+          });
+      }
+
+      setVotes({ ...votes, [recId]: voteType });
+    } catch (error) {
+      console.error('Error voting:', error);
+    }
+  };
+
+  const handleSubmitFeedback = async (recId: string, assetId: string) => {
+    if (!profile || !dealId || !feedbackReason) return;
+
+    try {
+      const existing = await supabase
+        .from('recommendation_feedback')
+        .select('id')
+        .eq('recommendation_id', recId)
+        .eq('user_id', profile.id)
+        .maybeSingle();
+
+      if (existing.data) {
+        await supabase
+          .from('recommendation_feedback')
+          .update({
+            vote: 'down',
+            feedback_reason: feedbackReason,
+          })
+          .eq('id', existing.data.id);
+      } else {
+        await supabase
+          .from('recommendation_feedback')
+          .insert({
+            recommendation_id: recId,
+            deal_id: dealId,
+            asset_id: assetId,
+            user_id: profile.id,
+            vote: 'down',
+            feedback_reason: feedbackReason,
+          });
+      }
+
+      setVotes({ ...votes, [recId]: 'down' });
+      setShowFeedbackFor(null);
+      setFeedbackReason('');
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
     }
   };
 
@@ -219,32 +322,115 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
                 <div>
                   <h3 className="text-sm font-semibold mb-3 text-gray-900 flex items-center gap-2">
                     <Sparkles className="h-4 w-4" />
-                    AI Recommendations
+                    AI Recommendations ({recommendations.length})
                   </h3>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {recommendations.map((rec) => (
                       <div key={rec.id} className="bg-white border border-gray-200 rounded-lg p-3">
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <span className="px-2 py-0.5 bg-black text-white text-xs rounded-full">
-                            {rec.asset.type}
+                          <span className="px-2 py-0.5 bg-black text-white text-xs rounded-full capitalize">
+                            {rec.asset.category?.replace('_', ' ') || rec.asset.type}
                           </span>
                           <span className="px-2 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded text-xs font-medium">
                             {Math.round(rec.confidence_score * 100)}% match
                           </span>
                         </div>
-                        <h4 className="font-medium text-sm mb-1">{rec.asset.title}</h4>
-                        <p className="text-xs text-gray-600 line-clamp-2">{rec.reason}</p>
-                        {rec.asset.url && (
-                          <a
-                            href={rec.asset.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-black hover:underline mt-2"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                            View Asset
-                          </a>
+                        <h4 className="font-semibold text-sm mb-2">{rec.asset.title}</h4>
+
+                        <div className="bg-blue-50 rounded-lg p-2.5 mb-3 border border-blue-100">
+                          <p className="text-xs font-medium text-blue-900 mb-1">Why this fits:</p>
+                          <p className="text-xs text-blue-800">{rec.reason}</p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {rec.asset.url && (
+                            <a
+                              href={rec.asset.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              View Asset
+                            </a>
+                          )}
+
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => handleVote(rec.id, rec.asset_id, 'up')}
+                              className={`p-2 rounded-lg border transition-colors ${
+                                votes[rec.id] === 'up'
+                                  ? 'bg-green-50 border-green-300 text-green-700'
+                                  : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                              }`}
+                              title="This is helpful"
+                            >
+                              <ThumbsUp className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleVote(rec.id, rec.asset_id, 'down')}
+                              className={`p-2 rounded-lg border transition-colors ${
+                                votes[rec.id] === 'down'
+                                  ? 'bg-red-50 border-red-300 text-red-700'
+                                  : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                              }`}
+                              title="Not relevant"
+                            >
+                              <ThumbsDown className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {showFeedbackFor === rec.id && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <p className="text-xs font-medium text-gray-900 mb-2">Why isn't this helpful?</p>
+                            <div className="space-y-2 mb-3">
+                              {[
+                                { value: 'already_shown', label: 'Already showed this to customer' },
+                                { value: 'not_interested', label: 'Customer not interested in use case' },
+                                { value: 'wrong_industry', label: "Doesn't match customer's industry" },
+                                { value: 'wrong_stage', label: 'Wrong deal stage' },
+                                { value: 'competitor', label: 'They prefer a competitor solution' },
+                                { value: 'outdated', label: 'Content is outdated' },
+                                { value: 'too_technical', label: 'Too technical for this audience' },
+                                { value: 'other', label: 'Other reason' },
+                              ].map((option) => (
+                                <label
+                                  key={option.value}
+                                  className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                                >
+                                  <input
+                                    type="radio"
+                                    name={`feedback-${rec.id}`}
+                                    value={option.value}
+                                    checked={feedbackReason === option.value}
+                                    onChange={(e) => setFeedbackReason(e.target.value)}
+                                    className="text-black focus:ring-black"
+                                  />
+                                  <span className="text-xs text-gray-700">{option.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleSubmitFeedback(rec.id, rec.asset_id)}
+                                disabled={!feedbackReason}
+                                className="flex-1 px-3 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-colors"
+                              >
+                                Submit Feedback
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowFeedbackFor(null);
+                                  setFeedbackReason('');
+                                }}
+                                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs font-medium transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
                         )}
                       </div>
                     ))}
