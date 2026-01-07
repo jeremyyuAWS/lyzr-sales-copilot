@@ -29,7 +29,7 @@ function App() {
   }
 
   const pageTitles: Record<Page, string> = {
-    ask: 'Ask',
+    ask: 'Sales Workspace',
     deals: 'Deals Pipeline',
     'deal-detail': 'Deal Details',
     conversations: 'Conversations',
