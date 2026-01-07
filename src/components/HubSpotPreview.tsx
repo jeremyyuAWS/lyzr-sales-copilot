@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { CheckCircle, Edit3, X, ExternalLink, Calendar, DollarSign, Users, FileText, CheckSquare, TrendingUp, Mail, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CheckCircle, Edit3, X, ExternalLink, Calendar, DollarSign, Users, FileText, CheckSquare, TrendingUp, Mail, Sparkles, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 type HubSpotUpdate = {
   dealStage: string;
@@ -35,11 +37,14 @@ type HubSpotPreviewProps = {
   onConfirm: () => void;
   onEdit: () => void;
   onCancel: () => void;
+  context?: string;
 };
 
-export default function HubSpotPreview({ onConfirm, onEdit, onCancel }: HubSpotPreviewProps) {
+export default function HubSpotPreview({ onConfirm, onEdit, onCancel, context = '' }: HubSpotPreviewProps) {
+  const { profile } = useAuth();
   const [syncing, setSyncing] = useState(false);
   const [synced, setSynced] = useState(false);
+  const [feedback, setFeedback] = useState<Record<string, 'upvote' | 'downvote' | null>>({});
 
   const hubspotUpdate: HubSpotUpdate = {
     dealStage: 'Technical Validation',
@@ -113,6 +118,69 @@ Alex`,
     { id: '3', action: 'Prepare pricing proposal ($250k-$300k range)', priority: 'medium', dueDate: 'End of Week' },
     { id: '4', action: 'Research Harness and GitLab competitive positioning', priority: 'medium', dueDate: 'Next Week' },
   ];
+
+  useEffect(() => {
+    if (profile?.id) {
+      loadFeedback();
+    }
+  }, [profile]);
+
+  const loadFeedback = async () => {
+    if (!profile?.id) return;
+
+    try {
+      const { data } = await supabase
+        .from('asset_recommendation_feedback')
+        .select('asset_id, feedback_type')
+        .eq('user_id', profile.id)
+        .eq('context', context);
+
+      if (data) {
+        const feedbackMap: Record<string, 'upvote' | 'downvote' | null> = {};
+        data.forEach(item => {
+          feedbackMap[item.asset_id] = item.feedback_type as 'upvote' | 'downvote';
+        });
+        setFeedback(feedbackMap);
+      }
+    } catch (error) {
+      console.error('Error loading feedback:', error);
+    }
+  };
+
+  const handleFeedback = async (assetId: string, type: 'upvote' | 'downvote') => {
+    if (!profile?.id) return;
+
+    const currentFeedback = feedback[assetId];
+    const newFeedback = currentFeedback === type ? null : type;
+
+    setFeedback(prev => ({ ...prev, [assetId]: newFeedback }));
+
+    try {
+      if (newFeedback === null) {
+        await supabase
+          .from('asset_recommendation_feedback')
+          .delete()
+          .eq('user_id', profile.id)
+          .eq('asset_id', assetId)
+          .eq('context', context);
+      } else {
+        await supabase
+          .from('asset_recommendation_feedback')
+          .upsert({
+            user_id: profile.id,
+            asset_id: assetId,
+            context: context,
+            feedback_type: newFeedback,
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id,asset_id,context'
+          });
+      }
+    } catch (error) {
+      console.error('Error saving feedback:', error);
+      setFeedback(prev => ({ ...prev, [assetId]: currentFeedback }));
+    }
+  };
 
   const handleConfirm = async () => {
     setSyncing(true);
@@ -279,8 +347,8 @@ Alex`,
         </div>
         <div className="space-y-3">
           {recommendedAssets.map((asset) => (
-            <div key={asset.id} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="flex items-start justify-between gap-3">
+            <div key={asset.id} className="p-4 bg-gray-50 rounded-lg transition-colors">
+              <div className="flex items-start gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="px-2 py-0.5 bg-black text-white text-xs rounded-full">
@@ -290,13 +358,37 @@ Alex`,
                   </div>
                   <p className="text-xs text-gray-600">{asset.reason}</p>
                 </div>
-                <a
-                  href={asset.url}
-                  className="p-2 hover:bg-white rounded-lg transition-colors"
-                  title="View asset"
-                >
-                  <ExternalLink className="h-4 w-4 text-gray-600" />
-                </a>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleFeedback(asset.id, 'upvote')}
+                    className={`p-2 rounded-lg transition-colors ${
+                      feedback[asset.id] === 'upvote'
+                        ? 'bg-green-100 text-green-700'
+                        : 'hover:bg-white text-gray-400 hover:text-green-600'
+                    }`}
+                    title="This is helpful"
+                  >
+                    <ThumbsUp className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleFeedback(asset.id, 'downvote')}
+                    className={`p-2 rounded-lg transition-colors ${
+                      feedback[asset.id] === 'downvote'
+                        ? 'bg-red-100 text-red-700'
+                        : 'hover:bg-white text-gray-400 hover:text-red-600'
+                    }`}
+                    title="Not relevant"
+                  >
+                    <ThumbsDown className="h-4 w-4" />
+                  </button>
+                  <a
+                    href={asset.url}
+                    className="p-2 hover:bg-white rounded-lg transition-colors text-gray-600"
+                    title="View asset"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </div>
               </div>
             </div>
           ))}

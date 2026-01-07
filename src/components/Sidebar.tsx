@@ -33,9 +33,9 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
             alt="Lyzr"
             className="h-8 w-auto"
           />
+          <h1 className="text-xl font-bold">Sales Copilot</h1>
         </div>
-        <h1 className="text-xl font-bold">Sales Copilot</h1>
-        <p className="text-sm text-gray-600 mt-1">{profile?.full_name}</p>
+        <p className="text-sm text-gray-600">{profile?.full_name}</p>
         <p className="text-xs text-gray-500">{profile?.role}</p>
       </div>
 

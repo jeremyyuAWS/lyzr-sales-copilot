@@ -191,6 +191,7 @@ export default function Ask() {
             onConfirm={handleHubSpotConfirm}
             onEdit={handleHubSpotEdit}
             onCancel={handleHubSpotCancel}
+            context={query}
           />
         </div>
       ) : recommendations.length === 0 ? (
@@ -201,8 +202,7 @@ export default function Ask() {
               alt="Lyzr"
               className="h-24 mx-auto mb-8"
             />
-            <h1 className="text-5xl font-bold mb-4">Get the right demo, proof, or answer—fast</h1>
-            <p className="text-xl text-gray-600">Paste meeting notes, ask about a deal, or find the best demos, case studies, and playbooks to move it forward.</p>
+            <p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">Sales-ready guidance to move deals forward. Paste meeting notes, ask about a deal, and get recommended demos, case studies, and next steps—backed by what works.</p>
           </div>
 
           <div className="w-full max-w-3xl">
