@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ExternalLink, Sparkles, DollarSign, Calendar, Users, Briefcase, Activity, Send, MessageSquare, Loader2, ThumbsUp, ThumbsDown, ChevronDown } from 'lucide-react';
 import { supabase, Deal } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -33,7 +34,14 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
       loadActivities();
       loadComments();
       loadVotes();
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, [dealId]);
 
   const loadDeal = async () => {
@@ -270,8 +278,8 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
     ? Math.floor((Date.now() - new Date(activities[0].created_at).getTime()) / (1000 * 60 * 60 * 24))
     : null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4" style={{ zIndex: 9999 }} onClick={onClose}>
       <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
         {!deal ? (
           <div className="flex items-center justify-center p-12">
@@ -670,6 +678,7 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
         </>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
