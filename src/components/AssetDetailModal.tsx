@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Eye, Users, Calendar, MessageSquare, Building2, TrendingUp, Target, Lightbulb, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { supabase, Asset, Profile, Deal } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -166,8 +167,8 @@ export default function AssetDetailModal({ asset, profiles, usageCount, onClose,
                 <Target className="h-5 w-5 text-green-700" />
                 <h4 className="font-bold text-green-900">When This Works Best</h4>
               </div>
-              <div className="text-sm text-green-900 whitespace-pre-wrap leading-relaxed">
-                {asset.when_to_use}
+              <div className="prose prose-sm prose-green max-w-none text-sm text-green-900">
+                <ReactMarkdown>{asset.when_to_use}</ReactMarkdown>
               </div>
             </div>
           )}
@@ -286,8 +287,8 @@ export default function AssetDetailModal({ asset, profiles, usageCount, onClose,
                 <AlertCircle className="h-5 w-5 text-yellow-700" />
                 <h4 className="font-bold text-yellow-900">What This Is / Is Not</h4>
               </div>
-              <div className="text-sm text-yellow-900 whitespace-pre-wrap leading-relaxed">
-                {asset.what_it_is_not}
+              <div className="prose prose-sm prose-yellow max-w-none text-sm text-yellow-900">
+                <ReactMarkdown>{asset.what_it_is_not}</ReactMarkdown>
               </div>
             </div>
           )}
