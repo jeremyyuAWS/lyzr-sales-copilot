@@ -21,6 +21,10 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
   const [showFeedbackFor, setShowFeedbackFor] = useState<string | null>(null);
   const [feedbackReason, setFeedbackReason] = useState('');
   const [otherReasonText, setOtherReasonText] = useState('');
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [editedNotes, setEditedNotes] = useState('');
+  const [isEditingCloudProvider, setIsEditingCloudProvider] = useState(false);
+  const [editedCloudProvider, setEditedCloudProvider] = useState('');
 
   useEffect(() => {
     if (dealId) {
@@ -47,7 +51,11 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
       .eq('deal_id', dealId)
       .maybeSingle();
 
-    if (dealData) setDeal(dealData);
+    if (dealData) {
+      setDeal(dealData);
+      setEditedNotes(dealData.notes || '');
+      setEditedCloudProvider(dealData.cloud_provider || '');
+    }
     if (contextData) setContext(contextData);
   };
 
@@ -220,6 +228,42 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
     }
   };
 
+  const handleSaveNotes = async () => {
+    if (!dealId) return;
+
+    try {
+      const { error } = await supabase
+        .from('deals')
+        .update({ notes: editedNotes })
+        .eq('id', dealId);
+
+      if (!error) {
+        setDeal({ ...deal!, notes: editedNotes });
+        setIsEditingNotes(false);
+      }
+    } catch (error) {
+      console.error('Error saving notes:', error);
+    }
+  };
+
+  const handleSaveCloudProvider = async () => {
+    if (!dealId) return;
+
+    try {
+      const { error } = await supabase
+        .from('deals')
+        .update({ cloud_provider: editedCloudProvider })
+        .eq('id', dealId);
+
+      if (!error) {
+        setDeal({ ...deal!, cloud_provider: editedCloudProvider });
+        setIsEditingCloudProvider(false);
+      }
+    } catch (error) {
+      console.error('Error saving cloud provider:', error);
+    }
+  };
+
   if (!dealId) return null;
 
   const daysSinceActivity = activities.length > 0
@@ -302,6 +346,107 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
                   </div>
                 </div>
               )}
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold text-gray-900">Cloud Provider</h3>
+                  {!isEditingCloudProvider && (
+                    <button
+                      onClick={() => setIsEditingCloudProvider(true)}
+                      className="text-xs text-gray-600 hover:text-black transition-colors"
+                    >
+                      {deal?.cloud_provider ? 'Edit' : 'Add'}
+                    </button>
+                  )}
+                </div>
+                {isEditingCloudProvider ? (
+                  <div className="space-y-2">
+                    <select
+                      value={editedCloudProvider}
+                      onChange={(e) => setEditedCloudProvider(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                    >
+                      <option value="">Select cloud provider...</option>
+                      <option value="AWS">AWS</option>
+                      <option value="Azure">Azure</option>
+                      <option value="GCP">Google Cloud Platform</option>
+                      <option value="Oracle Cloud">Oracle Cloud</option>
+                      <option value="IBM Cloud">IBM Cloud</option>
+                      <option value="Alibaba Cloud">Alibaba Cloud</option>
+                      <option value="Multi-Cloud">Multi-Cloud</option>
+                      <option value="On-Premise">On-Premise</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveCloudProvider}
+                        className="flex-1 px-3 py-2 bg-black text-white rounded-lg hover:bg-gray-800 text-xs font-medium transition-colors"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsEditingCloudProvider(false);
+                          setEditedCloudProvider(deal?.cloud_provider || '');
+                        }}
+                        className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs font-medium transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-700">
+                    {deal?.cloud_provider || <span className="italic text-gray-400">No cloud provider specified</span>}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold text-gray-900">Deal Notes</h3>
+                  {!isEditingNotes && (
+                    <button
+                      onClick={() => setIsEditingNotes(true)}
+                      className="text-xs text-gray-600 hover:text-black transition-colors"
+                    >
+                      {deal?.notes ? 'Edit' : 'Add'}
+                    </button>
+                  )}
+                </div>
+                {isEditingNotes ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={editedNotes}
+                      onChange={(e) => setEditedNotes(e.target.value)}
+                      placeholder="Add notes about this deal..."
+                      rows={4}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-none"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveNotes}
+                        className="flex-1 px-3 py-2 bg-black text-white rounded-lg hover:bg-gray-800 text-xs font-medium transition-colors"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsEditingNotes(false);
+                          setEditedNotes(deal?.notes || '');
+                        }}
+                        className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs font-medium transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                    {deal?.notes || <span className="italic text-gray-400">No notes added yet</span>}
+                  </p>
+                )}
+              </div>
 
               {activities.length > 0 && (
                 <div>

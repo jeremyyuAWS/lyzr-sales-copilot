@@ -22,6 +22,8 @@ export type Deal = {
   close_date: string;
   assigned_ae_id: string;
   industry: string;
+  notes?: string | null;
+  cloud_provider?: string | null;
   created_at: string;
   updated_at: string;
 };
