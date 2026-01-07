@@ -181,7 +181,7 @@ export default function UpcomingMilestones({ milestones, onMilestoneClick }: Upc
               </span>
             </div>
             <div className="space-y-1">
-              {group.milestones.map(renderMilestone)}
+              {group.milestones.slice(0, group.label === 'Later' ? 3 : undefined).map(renderMilestone)}
             </div>
           </div>
         ))}
