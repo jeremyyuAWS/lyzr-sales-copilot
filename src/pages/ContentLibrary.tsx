@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import ContentForm from '../components/ContentForm';
 import VersionHistory from '../components/VersionHistory';
 import ContentAnalytics from '../components/ContentAnalytics';
+import AssetDetailModal from '../components/AssetDetailModal';
 
 type ViewMode = 'table' | 'grid';
 type ContentTab = 'all' | AssetCategory | 'analytics';
@@ -33,6 +34,8 @@ export default function ContentLibrary() {
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [selectedAssetId, setSelectedAssetId] = useState<string>('');
+  const [showAssetDetail, setShowAssetDetail] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [activeTab, setActiveTab] = useState<ContentTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -164,6 +167,11 @@ export default function ContentLibrary() {
       .eq('id', assetId);
 
     loadAssets();
+  };
+
+  const handleAssetClick = (asset: Asset) => {
+    setSelectedAsset(asset);
+    setShowAssetDetail(true);
   };
 
   const getCategoryCount = (category: AssetCategory) => {
@@ -387,6 +395,19 @@ export default function ContentLibrary() {
         />
       )}
 
+      {showAssetDetail && selectedAsset && (
+        <AssetDetailModal
+          asset={selectedAsset}
+          profiles={profiles}
+          usageCount={assetUsage[selectedAsset.id] || 0}
+          onClose={() => {
+            setShowAssetDetail(false);
+            setSelectedAsset(null);
+            loadAssets();
+          }}
+        />
+      )}
+
       {viewMode === 'table' ? (
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <table className="w-full">
@@ -410,7 +431,7 @@ export default function ContentLibrary() {
                 </tr>
               ) : (
                 filteredAssets.map((asset) => (
-                  <tr key={asset.id} className="hover:bg-gray-50">
+                  <tr key={asset.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleAssetClick(asset)}>
                     <td className="px-6 py-4">
                       <div className="font-medium">{asset.title}</div>
                       <div className="text-sm text-gray-600 line-clamp-1">{asset.description}</div>
@@ -465,7 +486,10 @@ export default function ContentLibrary() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleViewHistory(asset.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewHistory(asset.id);
+                          }}
                           className="p-2 hover:bg-gray-100 rounded-lg"
                           title="Version History"
                         >
@@ -473,7 +497,10 @@ export default function ContentLibrary() {
                         </button>
                         {(asset.created_by === profile?.id || isAdmin) && (
                           <button
-                            onClick={() => handleEdit(asset)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(asset);
+                            }}
                             className="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
                           >
                             Edit
@@ -484,7 +511,10 @@ export default function ContentLibrary() {
                             href={asset.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            onClick={() => handleViewAsset(asset.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewAsset(asset.id);
+                            }}
                             className="px-3 py-1 text-sm bg-black text-white rounded-lg hover:bg-gray-800"
                           >
                             View
@@ -501,7 +531,11 @@ export default function ContentLibrary() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAssets.map((asset) => (
-            <div key={asset.id} className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow">
+            <div
+              key={asset.id}
+              className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => handleAssetClick(asset)}
+            >
               <div className="flex items-start justify-between mb-3">
                 <span className="px-2 py-1 bg-gray-100 text-xs rounded">
                   {categoryLabels[asset.category]}
@@ -533,7 +567,10 @@ export default function ContentLibrary() {
                 <div className="flex items-center gap-2">
                   {(asset.created_by === profile?.id || isAdmin) && (
                     <button
-                      onClick={() => handleEdit(asset)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(asset);
+                      }}
                       className="text-sm text-gray-600 hover:text-black"
                     >
                       Edit
@@ -544,7 +581,10 @@ export default function ContentLibrary() {
                       href={asset.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={() => handleViewAsset(asset.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleViewAsset(asset.id);
+                      }}
                       className="px-3 py-1 text-sm bg-black text-white rounded-lg hover:bg-gray-800"
                     >
                       View
