@@ -5,6 +5,7 @@ import PromptPills from '../components/PromptPills';
 import DemoScenarios from '../components/DemoScenarios';
 import HubSpotPreview from '../components/HubSpotPreview';
 import DealInsights from '../components/DealInsights';
+import FollowUpEmail from '../components/FollowUpEmail';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -18,6 +19,7 @@ export default function Ask() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showHubSpotPreview, setShowHubSpotPreview] = useState(false);
   const [showDealInsights, setShowDealInsights] = useState(false);
+  const [showFollowUpEmail, setShowFollowUpEmail] = useState(false);
   const [feedback, setFeedback] = useState<Record<string, 'upvote' | 'downvote' | null>>({});
 
   useEffect(() => {
@@ -47,8 +49,11 @@ export default function Ask() {
 
     saveSearch(query);
 
-    const isMeetingNotes = query.toLowerCase().includes('meeting notes') ||
-                          query.toLowerCase().includes('attendees:') ||
+    const queryLower = query.toLowerCase();
+
+    // Check for meeting notes to HubSpot conversion
+    const isMeetingNotes = queryLower.includes('meeting notes') ||
+                          queryLower.includes('attendees:') ||
                           (query.includes('Key discussion') && query.includes('Next steps'));
 
     if (isMeetingNotes) {
@@ -56,14 +61,26 @@ export default function Ask() {
       return;
     }
 
-    const isDealInsights = (query.toLowerCase().includes('analyze') || query.toLowerCase().includes('insights')) &&
-                          (query.toLowerCase().includes('deal') || query.toLowerCase().includes('stage:'));
+    // Check for follow-up email generation
+    const isFollowUpEmail = (queryLower.includes('write') || queryLower.includes('generate') || queryLower.includes('draft')) &&
+                           (queryLower.includes('email') || queryLower.includes('follow-up') || queryLower.includes('follow up'));
+
+    if (isFollowUpEmail) {
+      setShowFollowUpEmail(true);
+      return;
+    }
+
+    // Check for deal insights/analysis (must be explicit about analyzing deal health)
+    const isDealInsights = (queryLower.includes('analyze the health') || queryLower.includes('deal health') ||
+                           (queryLower.includes('analyze') && queryLower.includes('deal') && queryLower.includes('risk'))) &&
+                          queryLower.includes('current status');
 
     if (isDealInsights) {
       setShowDealInsights(true);
       return;
     }
 
+    // Default: Asset recommendations
     setLoading(true);
     try {
       const { data } = await supabase
@@ -200,6 +217,13 @@ export default function Ask() {
     setTextareaRows(3);
   };
 
+  const handleFollowUpEmailClose = () => {
+    setShowFollowUpEmail(false);
+    setRecommendations([]);
+    setQuery('');
+    setTextareaRows(3);
+  };
+
   const loadFeedback = async () => {
     if (!profile?.id || !query) return;
 
@@ -272,6 +296,8 @@ export default function Ask() {
             context={query}
           />
         </div>
+      ) : showFollowUpEmail ? (
+        <FollowUpEmail query={query} onClose={handleFollowUpEmailClose} />
       ) : showDealInsights ? (
         <DealInsights query={query} onClose={handleDealInsightsClose} />
       ) : recommendations.length === 0 ? (
