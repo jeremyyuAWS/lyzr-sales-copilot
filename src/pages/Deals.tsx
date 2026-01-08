@@ -269,6 +269,11 @@ export default function Deals({ onNavigate }: DealsProps) {
               {deal.industry && (
                 <span className="text-xs text-gray-500">{deal.industry}</span>
               )}
+              {deal.tier && (
+                <span className="px-2.5 py-1 bg-gray-100 text-gray-800 border border-gray-300 rounded-lg text-xs font-medium flex-shrink-0">
+                  {deal.tier}
+                </span>
+              )}
               {context?.cloud_provider && (
                 <div className={`px-2.5 py-1 rounded-lg text-xs font-medium border flex-shrink-0 ${CLOUD_COLORS[context.cloud_provider] || 'bg-gray-100 text-gray-800'}`}>
                   {CLOUD_ICONS[context.cloud_provider]} {context.cloud_provider}

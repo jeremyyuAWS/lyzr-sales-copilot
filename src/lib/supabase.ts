@@ -24,6 +24,7 @@ export type Deal = {
   industry: string;
   notes?: string | null;
   cloud_provider?: string | null;
+  tier?: string | null;
   next_action?: string | null;
   next_action_due_date?: string | null;
   health_flags?: string[] | null;

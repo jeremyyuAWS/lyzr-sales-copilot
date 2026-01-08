@@ -27,6 +27,8 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
   const [editedNotes, setEditedNotes] = useState('');
   const [isEditingCloudProvider, setIsEditingCloudProvider] = useState(false);
   const [editedCloudProvider, setEditedCloudProvider] = useState('');
+  const [isEditingTier, setIsEditingTier] = useState(false);
+  const [editedTier, setEditedTier] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
@@ -65,6 +67,7 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
       setDeal(dealData);
       setEditedNotes(dealData.notes || '');
       setEditedCloudProvider(dealData.cloud_provider || '');
+      setEditedTier(dealData.tier || '');
     }
     if (contextData) setContext(contextData);
   };
@@ -376,6 +379,24 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
     }
   };
 
+  const handleSaveTier = async () => {
+    if (!dealId) return;
+
+    try {
+      const { error } = await supabase
+        .from('deals')
+        .update({ tier: editedTier })
+        .eq('id', dealId);
+
+      if (!error) {
+        setDeal({ ...deal!, tier: editedTier });
+        setIsEditingTier(false);
+      }
+    } catch (error) {
+      console.error('Error saving tier:', error);
+    }
+  };
+
   if (!dealId) return null;
 
   const daysSinceActivity = activities.length > 0
@@ -512,6 +533,55 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
                 ) : (
                   <p className="text-sm text-gray-700">
                     {deal?.cloud_provider || <span className="italic text-gray-400">No cloud provider specified</span>}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold text-gray-900">Deal Tier</h3>
+                  {!isEditingTier && (
+                    <button
+                      onClick={() => setIsEditingTier(true)}
+                      className="text-xs text-gray-600 hover:text-black transition-colors"
+                    >
+                      {deal?.tier ? 'Edit' : 'Add'}
+                    </button>
+                  )}
+                </div>
+                {isEditingTier ? (
+                  <div className="space-y-2">
+                    <select
+                      value={editedTier}
+                      onChange={(e) => setEditedTier(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                    >
+                      <option value="">Select tier...</option>
+                      <option value="Tier 1">Tier 1</option>
+                      <option value="Tier 2">Tier 2</option>
+                      <option value="Tier 3">Tier 3</option>
+                    </select>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveTier}
+                        className="flex-1 px-3 py-2 bg-black text-white rounded-lg hover:bg-gray-800 text-xs font-medium transition-colors"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsEditingTier(false);
+                          setEditedTier(deal?.tier || '');
+                        }}
+                        className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-xs font-medium transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-700">
+                    {deal?.tier || <span className="italic text-gray-400">No tier specified</span>}
                   </p>
                 )}
               </div>
