@@ -1,5 +1,6 @@
 import { Mail, CheckCircle, Edit2, Send } from 'lucide-react';
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 type FollowUpEmailProps = {
   query: string;
@@ -89,9 +90,9 @@ Best regards,
         </div>
 
         <div className="p-6">
-          <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-gray-800">
-            {emailBody}
-          </pre>
+          <div className="prose prose-sm max-w-none text-gray-800">
+            <ReactMarkdown>{emailBody}</ReactMarkdown>
+          </div>
         </div>
       </div>
 
