@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ExternalLink, Sparkles, DollarSign, Calendar, Users, Briefcase, Activity, Send, MessageSquare, Loader2, ThumbsUp, ThumbsDown, ChevronDown } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { supabase, Deal } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -445,7 +446,9 @@ export default function DealDetailModal({ dealId, onClose }: DealDetailModalProp
               {context?.description && (
                 <div>
                   <h3 className="text-sm font-semibold mb-2 text-gray-900">Description</h3>
-                  <p className="text-sm text-gray-700">{context.description}</p>
+                  <div className="prose prose-sm max-w-none text-gray-700">
+                    <ReactMarkdown>{context.description}</ReactMarkdown>
+                  </div>
                 </div>
               )}
 

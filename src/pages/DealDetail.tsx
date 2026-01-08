@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Edit2, Save, ExternalLink, Link as LinkIcon, X, Sparkles, TrendingUp, DollarSign, Users, Briefcase, AlertCircle, Activity, Calendar } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import GlassCard from '../components/GlassCard';
 import { supabase, Deal, DealContext, Asset } from '../lib/supabase';
 
@@ -248,7 +249,13 @@ export default function DealDetail({ dealId, onNavigate }: DealDetailProps) {
                   placeholder="Describe this deal..."
                 />
               ) : (
-                <p className="text-gray-700">{formData.description || 'No description'}</p>
+                <div className="prose prose-sm max-w-none text-gray-700">
+                  {formData.description ? (
+                    <ReactMarkdown>{formData.description}</ReactMarkdown>
+                  ) : (
+                    <p>No description</p>
+                  )}
+                </div>
               )}
             </div>
 
