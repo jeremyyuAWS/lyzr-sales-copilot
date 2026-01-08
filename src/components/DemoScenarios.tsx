@@ -102,7 +102,7 @@ type DemoScenariosProps = {
 };
 
 export default function DemoScenarios({ onScenarioClick }: DemoScenariosProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="mb-6 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
