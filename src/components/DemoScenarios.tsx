@@ -53,13 +53,21 @@ Cloud provider: AWS`,
     description: 'Create personalized follow-up with recommended assets',
     color: 'bg-green-500 hover:bg-green-600',
     icon: <Mail className="h-4 w-4" />,
-    demoText: `Generate a follow-up email for Accenture M&A after our discovery call.
+    demoText: `Write a follow-up email to Accenture M&A after yesterday's discovery call.
 
-Include:
-- Summary of their deal intelligence and due diligence automation needs
-- Link to our financial services case study (Dev Factory)
-- Suggest next steps (technical deep-dive with M&A team)
-- Attach relevant demo video showing document analysis capabilities`,
+Meeting recap:
+- Discussed their need for AI-powered deal intelligence and due diligence automation
+- Pain points: Manual document analysis taking 3-4 weeks per deal, high error rates
+- Timeline: Want to pilot on 2 active deals starting next month
+- Budget: $300k+ approved for FY2024
+- Key contact: Marcus Thompson (VP M&A Operations)
+
+Email should:
+- Thank them for their time and recap key discussion points
+- Reference our Dev Factory case study (financial services M&A automation)
+- Include link to our document analysis demo video
+- Propose next steps: technical deep-dive with their M&A team next week
+- Professional, concise tone`,
   },
   {
     id: 'asset-recommendation',
@@ -67,16 +75,20 @@ Include:
     description: 'Get AI recommendations for demos, case studies, and proofs',
     color: 'bg-purple-500 hover:bg-purple-600',
     icon: <Target className="h-4 w-4" />,
-    demoText: `Find the best assets to share with Under Armour.
+    demoText: `I'm preparing for a call with Under Armour next week. Can you recommend the most relevant assets from our content library?
 
-Deal context:
+Context:
 - Industry: Retail/Athletic Apparel
 - Use case: PLM Assistant for product intelligence and market insights
 - Stage: Discovery
-- Pain points: Slow product development cycles, disconnected market data
-- Competitors: Legacy PLM systems, manual processes
+- Pain points: Slow product development cycles, disconnected market data, need real-time market intelligence
+- Key decision makers: VP Product Development, Director of Innovation
 
-What demos, case studies, or proof points should I share?`,
+Please search our content library and recommend:
+1. Best demo videos to share
+2. Relevant case studies from similar industries
+3. Technical proofs or ROI calculators
+4. Battle cards if competing with legacy systems`,
   },
   {
     id: 'quick-insights',
@@ -84,16 +96,24 @@ What demos, case studies, or proof points should I share?`,
     description: 'Analyze deal health and get strategic recommendations',
     color: 'bg-orange-500 hover:bg-orange-600',
     icon: <Zap className="h-4 w-4" />,
-    demoText: `Analyze my NVIDIA deal and provide insights:
+    demoText: `Analyze the health and risk factors for my NVIDIA Enterprise Support Copilot deal:
 
+Current status:
 - Deal stage: Technical Validation
 - Amount: $450k ARR
-- Close date: End of Q3
+- Close date: End of Q3 (90 days away)
+- Last activity: Demo 2 weeks ago
 - Key stakeholders: VP Enterprise Support, Director of Customer Success
+- Champion: Engineering Manager (Sarah Chen)
 - Competitors: ServiceNow, Zendesk AI
-- Status: Enterprise Support Copilot pilot running with 50 engineers
+- Pilot status: Running with 50 engineers for 3 weeks
 
-What should I focus on to win this deal?`,
+Concerns:
+- Haven't heard back since the pilot started
+- Procurement team not yet engaged
+- Security review not initiated
+
+What's the deal health score? What risks should I address? What are the next critical actions?`,
   },
 ];
 
