@@ -30,19 +30,27 @@ export default function AssetDetailModal({ asset, profiles, usageCount, onClose,
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    console.log('AssetDetailModal mounted with asset:', asset.id, asset.title);
+    console.log('Profiles count:', profiles.length);
     loadComments();
     loadDealsUsingAsset();
     loadRelatedAssets();
   }, [asset.id]);
 
   const loadComments = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('asset_comments')
       .select('*')
       .eq('asset_id', asset.id)
       .order('created_at', { ascending: false });
 
+    if (error) {
+      console.error('Error loading comments:', error);
+      return;
+    }
+
     if (data) {
+      console.log('Loaded comments for asset:', asset.id, 'Count:', data.length);
       setComments(data);
     }
   };
@@ -104,6 +112,9 @@ export default function AssetDetailModal({ asset, profiles, usageCount, onClose,
 
   const getProfileName = (profileId: string) => {
     const p = profiles.find(prof => prof.id === profileId);
+    if (!p) {
+      console.log('Profile not found for ID:', profileId, 'Available profiles:', profiles.length);
+    }
     return p?.full_name || 'Unknown User';
   };
 
