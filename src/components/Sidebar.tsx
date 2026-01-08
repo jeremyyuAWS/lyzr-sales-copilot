@@ -9,15 +9,19 @@ type SidebarProps = {
 
 export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   const { profile } = useAuth();
+  const [copilotOpen, setCopilotOpen] = useState(true);
   const [workspaceOpen, setWorkspaceOpen] = useState(true);
 
   const isAdmin = profile?.role === 'Admin';
 
   const mainItems = [
-    { id: 'ask', label: 'Copilot', icon: MessageCircle },
-    { id: 'conversations', label: 'Conversations', icon: MessageCircle },
     { id: 'deals', label: 'Deals', icon: Briefcase },
     { id: 'content', label: 'Content Library', icon: FolderOpen },
+  ];
+
+  const copilotItems = [
+    { id: 'ask', label: 'Ask Copilot', icon: MessageCircle },
+    { id: 'conversations', label: 'Conversations', icon: MessageCircle },
   ];
 
   const workspaceItems = [
@@ -40,23 +44,58 @@ export default function Sidebar({ currentPage, onNavigate }: SidebarProps) {
       </div>
 
       <nav className="flex-1 p-4 space-y-1">
-        {mainItems.map((item) => (
+        <div>
           <button
-            key={item.id}
-            onClick={() => onNavigate(item.id)}
-            data-tour={`${item.id}-nav`}
-            className={`
-              w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors
-              ${currentPage === item.id
-                ? 'bg-gray-100 text-black'
-                : 'text-gray-600 hover:bg-gray-50'
-              }
-            `}
+            onClick={() => setCopilotOpen(!copilotOpen)}
+            className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm font-medium text-gray-700 hover:text-black"
           >
-            <item.icon className="h-4 w-4" />
-            <span className="text-sm font-medium">{item.label}</span>
+            {copilotOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            <MessageCircle className="h-4 w-4" />
+            Copilot
           </button>
-        ))}
+
+          {copilotOpen && (
+            <div className="mt-1 space-y-1 pl-4">
+              {copilotItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => onNavigate(item.id)}
+                  data-tour={`${item.id}-nav`}
+                  className={`
+                    w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors
+                    ${currentPage === item.id
+                      ? 'bg-gray-100 text-black'
+                      : 'text-gray-600 hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="pt-2">
+          {mainItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onNavigate(item.id)}
+              data-tour={`${item.id}-nav`}
+              className={`
+                w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors
+                ${currentPage === item.id
+                  ? 'bg-gray-100 text-black'
+                  : 'text-gray-600 hover:bg-gray-50'
+                }
+              `}
+            >
+              <item.icon className="h-4 w-4" />
+              <span className="text-sm font-medium">{item.label}</span>
+            </button>
+          ))}
+        </div>
 
         {isAdmin && (
           <div className="pt-4">

@@ -15,7 +15,7 @@ export default function ProductTour({ run, onComplete }: ProductTourProps) {
     },
     {
       target: '[data-tour="sidebar"]',
-      content: 'Use the sidebar to navigate between Ask, Conversations, and your Deals pipeline.',
+      content: 'Use the sidebar to navigate. The Copilot section contains Ask and Conversations features.',
       placement: 'right',
     },
     {
